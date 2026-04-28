@@ -1,15 +1,18 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { api } from './api.js';
 
 // [TRACE: main.js]
 const ITEM_TYPES = [
     'block', 'beam', 'slab', 'pipe', 'plate', 'hook', 'lumber', 'pot', 'pex', 'spray'
 ];
 const MATERIAL_KEYS = [
-    'concrete', 'wood', 'brick', 'black_iron', 'sheetrock', 'terracotta', 'grass', 'asphalt', 'marble', 'cobblestone', 'shingles', 'glass', 'water', 'pex_red', 'pex_blue'
+    'concrete', 'wood', 'brick', 'black_iron', 'sheetrock', 'terracotta', 'grass', 'asphalt', 'marble', 'cobblestone', 'shingles', 'glass', 'water', 'pex_red', 'pex_blue',
+    'dark_wood', 'light_wood', 'mahogany', 'granite', 'sandstone', 'slate'
 ];
 const TEXTURE_NAMES = [
-    'wood', 'concrete', 'brick', 'steel', 'black_iron', 'sheetrock'
+    'wood', 'concrete', 'brick', 'steel', 'black_iron', 'sheetrock',
+    'marble', 'cobblestone', 'shingles', 'grass', 'terracotta'
 ];
 
 const BLUEPRINT_VERSION = 2;
@@ -122,6 +125,11 @@ class BuilderApp {
             window.matchMedia &&
             window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         this.updateModalOpen = false;
+        // Cloud state
+        this._cloudProjects = [];
+        this._cloudGallery = [];
+        this._cloudSaveTargetId = null; // blueprint id if updating existing
+        this._backendAvailable = false;
         this.init();
     }
 
@@ -137,6 +145,8 @@ class BuilderApp {
             this.updateTakeoff();
             this.showToast('Ready — place parts or load a blueprint.', 'info');
             this.animate();
+            // Non-blocking backend check — degrades gracefully if server not running
+            this.checkBackend().catch(() => {});
         } catch (err) {
             console.error(err);
             this.showToast('Startup error — see console.', 'danger');
@@ -1390,15 +1400,6 @@ class BuilderApp {
     }
 
     buildStandardMaterial(materialKey) {
-        if (materialKey === 'terracotta') {
-            return new THREE.MeshStandardMaterial({ color: 0xa34b2f, roughness: 0.7, metalness: 0.1 });
-        }
-        if (materialKey === 'grass') {
-            return new THREE.MeshStandardMaterial({ color: 0x4CAF50, roughness: 1.0, metalness: 0.0 });
-        }
-        if (materialKey === 'asphalt') {
-            return new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9, metalness: 0.1 });
-        }
         if (materialKey === 'glass') {
             return new THREE.MeshStandardMaterial({ 
                 color: 0xa9d0f5, 
@@ -1423,11 +1424,31 @@ class BuilderApp {
         if (materialKey === 'pex_blue') {
             return new THREE.MeshStandardMaterial({ color: 0x3366ff, roughness: 0.3, metalness: 0.1 });
         }
-        const map = this.textures[materialKey] || this.createFallbackTexture(materialKey);
+
+        let baseKey = materialKey;
+        let colorTint = 0xffffff;
+        let roughness = 0.7;
+        let metalness = 0.3;
+
+        // Coded Variations
+        if (materialKey === 'dark_wood') { baseKey = 'wood'; colorTint = 0x5c4033; }
+        else if (materialKey === 'light_wood') { baseKey = 'wood'; colorTint = 0xffe4c4; }
+        else if (materialKey === 'mahogany') { baseKey = 'wood'; colorTint = 0x6b2e2e; }
+        else if (materialKey === 'granite') { baseKey = 'concrete'; colorTint = 0x888899; roughness = 0.6; }
+        else if (materialKey === 'sandstone') { baseKey = 'concrete'; colorTint = 0xd2b48c; roughness = 0.9; }
+        else if (materialKey === 'slate') { baseKey = 'cobblestone'; colorTint = 0x5a636a; roughness = 0.8; }
+        
+        // Base Overrides
+        else if (materialKey === 'grass') { roughness = 1.0; metalness = 0.0; }
+        else if (materialKey === 'asphalt') { roughness = 0.9; metalness = 0.1; }
+        else if (materialKey === 'terracotta') { roughness = 0.7; metalness = 0.1; }
+
+        const map = this.textures[baseKey] || this.createFallbackTexture(baseKey);
         return new THREE.MeshStandardMaterial({
             map,
-            roughness: 0.7,
-            metalness: 0.3
+            color: colorTint,
+            roughness,
+            metalness
         });
     }
 
@@ -2041,6 +2062,27 @@ class BuilderApp {
             takeoffCopy.addEventListener('click', () => this.copyTakeoffTsv());
         }
 
+        // Cloud / local server buttons
+        const cloudSaveBtn = document.getElementById('cloud-save-btn');
+        if (cloudSaveBtn) cloudSaveBtn.addEventListener('click', () => this.openCloudSave());
+        const cloudGalleryBtn = document.getElementById('cloud-gallery-btn');
+        if (cloudGalleryBtn) cloudGalleryBtn.addEventListener('click', () => this.openCloudGallery());
+        const cloudSaveSubmit = document.getElementById('cloud-save-submit');
+        if (cloudSaveSubmit) cloudSaveSubmit.addEventListener('click', () => this.submitCloudSave());
+        const cloudNewProjBtn = document.getElementById('cloud-new-project-btn');
+        if (cloudNewProjBtn) cloudNewProjBtn.addEventListener('click', () => this.createProjectAndSave());
+        document.querySelectorAll('.cloud-modal-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('cloud-save-backdrop').hidden = true;
+                document.getElementById('cloud-gallery-backdrop').hidden = true;
+            });
+        });
+        // Close cloud modals on backdrop click
+        ['cloud-save-backdrop', 'cloud-gallery-backdrop'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', e => { if (e.target === el) el.hidden = true; });
+        });
+
         window.addEventListener('keydown', (e) => {
             if (this.shouldIgnoreKeyboard()) return;
             const mod = e.ctrlKey || e.metaKey;
@@ -2241,6 +2283,163 @@ class BuilderApp {
         
         this.scene.add(p.mesh);
         this.particles.push(p);
+    }
+
+    // ── Cloud / Backend methods ─────────────────────────────────
+
+    async checkBackend() {
+        try {
+            await api.health();
+            this._backendAvailable = true;
+        } catch (e) {
+            this._backendAvailable = false;
+        }
+        this._updateCloudUi();
+    }
+
+    _updateCloudUi() {
+        const section = document.getElementById('cloud-section');
+        if (!section) return;
+        section.style.opacity = this._backendAvailable ? '1' : '0.45';
+        section.title = this._backendAvailable ? '' : 'Backend server not running — start launch.bat';
+    }
+
+    captureScreenshot() {
+        try {
+            this.renderer.render(this.scene, this.camera);
+            return this.renderer.domElement.toDataURL('image/jpeg', 0.55);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Open the Cloud Save modal
+    async openCloudSave() {
+        if (!this._backendAvailable) {
+            this.showToast('Backend not running — start launch.bat first.', 'danger');
+            return;
+        }
+        if (this.objects.length === 0) {
+            this.showToast('Nothing to save — place some parts first.', 'info');
+            return;
+        }
+        try {
+            this._cloudProjects = await api.listProjects();
+            this._renderSaveModal();
+            document.getElementById('cloud-save-backdrop').hidden = false;
+            document.getElementById('cloud-save-name').focus();
+        } catch (e) {
+            this.showToast('Could not load projects: ' + e.message, 'danger');
+        }
+    }
+
+    _renderSaveModal() {
+        const sel = document.getElementById('cloud-save-project');
+        if (!sel) return;
+        sel.innerHTML = this._cloudProjects
+            .map(p => `<option value="${p.id}">${p.name} (${p.blueprint_count} saves)</option>`)
+            .join('');
+    }
+
+    async submitCloudSave() {
+        const name = (document.getElementById('cloud-save-name')?.value || '').trim();
+        const projectId = document.getElementById('cloud-save-project')?.value;
+        if (!name) { this.showToast('Enter a blueprint name.', 'danger'); return; }
+        if (!projectId) { this.showToast('Select a project.', 'danger'); return; }
+
+        const parts = this.objects.map(o => this.meshToSnapshot(o));
+        const payload = { v: BLUEPRINT_VERSION, parts };
+        const thumbnail = this.captureScreenshot();
+
+        try {
+            let result;
+            if (this._cloudSaveTargetId) {
+                result = await api.updateBlueprint(this._cloudSaveTargetId, {
+                    name, data: payload, thumbnail
+                });
+                this.showToast(`Updated "${result.name}" (v${result.version})`, 'info');
+            } else {
+                result = await api.saveBlueprint(projectId, name, payload, thumbnail);
+                this.showToast(`Saved "${result.name}" to cloud.`, 'info');
+            }
+            this._cloudSaveTargetId = result.id;
+            document.getElementById('cloud-save-backdrop').hidden = true;
+        } catch (e) {
+            this.showToast('Save failed: ' + e.message, 'danger');
+        }
+    }
+
+    async createProjectAndSave() {
+        const rawName = (document.getElementById('cloud-new-project-name')?.value || '').trim();
+        if (!rawName) { this.showToast('Enter a project name.', 'danger'); return; }
+        try {
+            const proj = await api.createProject(rawName);
+            this._cloudProjects.push({ ...proj, blueprint_count: 0 });
+            this._renderSaveModal();
+            // Auto-select new project
+            const sel = document.getElementById('cloud-save-project');
+            if (sel) sel.value = String(proj.id);
+            document.getElementById('cloud-new-project-name').value = '';
+            this.showToast(`Project "${proj.name}" created.`, 'info');
+        } catch (e) {
+            this.showToast('Failed to create project: ' + e.message, 'danger');
+        }
+    }
+
+    // Open the Cloud Gallery / Load modal
+    async openCloudGallery() {
+        if (!this._backendAvailable) {
+            this.showToast('Backend not running — start launch.bat first.', 'danger');
+            return;
+        }
+        try {
+            this._cloudGallery = await api.gallery();
+            this._renderGallery();
+            document.getElementById('cloud-gallery-backdrop').hidden = false;
+        } catch (e) {
+            this.showToast('Could not load gallery: ' + e.message, 'danger');
+        }
+    }
+
+    _renderGallery() {
+        const grid = document.getElementById('cloud-gallery-grid');
+        if (!grid) return;
+        if (this._cloudGallery.length === 0) {
+            grid.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;text-align:center;padding:2rem;">No saved blueprints yet.</p>';
+            return;
+        }
+        grid.innerHTML = this._cloudGallery.map(bp => `
+            <div class="gallery-card" data-id="${bp.id}" title="Load: ${bp.name}">
+                ${ bp.thumbnail
+                    ? `<img class="gallery-thumb" src="${bp.thumbnail}" alt="${bp.name}">`
+                    : `<div class="gallery-thumb gallery-thumb--empty">No Preview</div>`
+                }
+                <div class="gallery-info">
+                    <span class="gallery-name">${bp.name}</span>
+                    <span class="gallery-meta">${bp.project_name} · ${bp.part_count} parts · v${bp.version}</span>
+                </div>
+            </div>
+        `).join('');
+
+        grid.querySelectorAll('.gallery-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const id = card.dataset.id;
+                this.loadCloudBlueprint(id);
+            });
+        });
+    }
+
+    async loadCloudBlueprint(id) {
+        try {
+            const bp = await api.getBlueprint(id);
+            const data = typeof bp.data === 'string' ? JSON.parse(bp.data) : bp.data;
+            this.importBlueprintJson(JSON.stringify(data));
+            this._cloudSaveTargetId = Number(id); // future saves will overwrite this
+            document.getElementById('cloud-gallery-backdrop').hidden = true;
+            this.showToast(`Loaded "${bp.name}" (v${bp.version}) from local server.`, 'info');
+        } catch (e) {
+            this.showToast('Load failed: ' + e.message, 'danger');
+        }
     }
 }
 

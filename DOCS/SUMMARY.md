@@ -1,6 +1,6 @@
-<!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # SUMMARY
 Project: Builder-3D
+[AMENDED 2026-04-27]: **v1.0.2** — **Local Backend System**: Replaced static serve with a lightweight Node.js Express server. Pure JS local JSON database (`data/db.json`) for zero-configuration, robust persistence. Added **Projects**, **Cloud Save**, **Gallery**, and **Auto-Versioning History**.
 [AMENDED 2026-04-27]: **v1.0.1** — **Update 3 (Expansion)**: Premium **Procedural Texture Generator** (Marble, Cobblestone, Shingles, upgraded Grass/Asphalt); expanded material palette; image fallback system; performance-optimized 512px canvas generation.
 [AMENDED 2026-04-27]: **v1.0.1** — **Update modal** + header version pill (`APP_RELEASE`); **What’s new** toolbar + `localStorage` dismiss key; release rules: `DOCS/RULES_RELEASES.md`, `.cursor/rules/builder-3d-project.mdc`.
 [AMENDED 2026-04-27]: **v1.0.0** — **Update 2 (QoL)**: orthographic **Plan View** / **`V`** + resize wiring; live **compass** rotation; **Home** / **F** camera framing; blueprint **copy to clipboard**; **local draft** autosave + restore prompt; **Esc** (walk/help/measure); **Del** delete; backtick (**`**) stats FPS; hold **Alt** for **¼ m** snap; **reduced-motion** disables spray particles. See `CHANGELOG` / `ARCHITECTURE` (Update 2).

@@ -1,10 +1,13 @@
 {
   "name": "builder-3d",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "3D Construction Builder Scene",
-  "main": "main.js",
+  "main": "server/index.js",
   "scripts": {
-    "dev": "npx -y serve ."
+    "dev": "node server/index.js",
+    "start": "node server/index.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "express": "^4.19.2"
+  }
 }

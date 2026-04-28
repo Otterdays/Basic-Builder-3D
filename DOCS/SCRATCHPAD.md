@@ -19,9 +19,12 @@
 - [ ] Mobile/Touch support <!-- id: 10 -->
 
 ## Last 5 Actions
-1. Implemented a robust `TextureGenerator` in `main.js` to bypass image generation quota.
-2. Created high-detail procedural patterns for Marble, Cobblestone, and Roof Shingles.
-3. Upgraded Grass, Asphalt, and Terracotta from solid colors to procedural noise-based textures.
+1. Architected and built a complete Local Backend System (`server/index.js`, `server/db.js`, `server/routes`).
+2. Implemented a zero-dependency JSON storage engine to avoid native compilation issues on Windows.
+3. Added full `projects` and `blueprints` REST APIs with auto-versioning history and gallery thumbnails.
+4. Integrated a thin frontend `api.js` client and wired up a premium UI for Cloud Save and Gallery browsing.
+5. Replaced the generic `serve` command in `launch.bat` with the new custom Express server.
+[AMENDED 2026-04-27]: Git remote origin `https://github.com/Otterdays/Basic-Builder-3D` — pushed branch `main` (repo was empty).
 4. Expanded the sidebar UI to include the new architectural materials.
 5. Updated project documentation (SUMMARY, SBOM, CHANGELOG) to v1.0.1.
 6. v1.0.1: update modal + RULES_RELEASES + cursor rules + version pill.

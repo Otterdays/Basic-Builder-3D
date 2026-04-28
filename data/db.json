@@ -1,0 +1,14 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "name": "My Builds",
+      "description": "Default local project",
+      "created_at": "2026-04-28T04:12:07.187Z",
+      "updated_at": "2026-04-28T04:12:07.187Z"
+    }
+  ],
+  "blueprints": [],
+  "history": [],
+  "_nextId": 2
+}

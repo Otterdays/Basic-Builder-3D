@@ -42,8 +42,28 @@
                                 <button class="option-btn active" data-material="concrete" title="Concrete">
                                     <img src="assets/textures/concrete.png" alt="Concrete">
                                 </button>
+                                <button class="option-btn" data-material="granite" title="Granite">
+                                    <img src="assets/textures/concrete.png" alt="Granite">
+                                    <div style="position:absolute; inset:0; background:#888899; mix-blend-mode:multiply;"></div>
+                                </button>
+                                <button class="option-btn" data-material="sandstone" title="Sandstone">
+                                    <img src="assets/textures/concrete.png" alt="Sandstone">
+                                    <div style="position:absolute; inset:0; background:#d2b48c; mix-blend-mode:multiply;"></div>
+                                </button>
                                 <button class="option-btn" data-material="wood" title="Wood">
                                     <img src="assets/textures/wood.png" alt="Wood">
+                                </button>
+                                <button class="option-btn" data-material="dark_wood" title="Dark Wood">
+                                    <img src="assets/textures/wood.png" alt="Dark Wood">
+                                    <div style="position:absolute; inset:0; background:#5c4033; mix-blend-mode:multiply;"></div>
+                                </button>
+                                <button class="option-btn" data-material="light_wood" title="Light Wood">
+                                    <img src="assets/textures/wood.png" alt="Light Wood">
+                                    <div style="position:absolute; inset:0; background:#ffe4c4; mix-blend-mode:multiply;"></div>
+                                </button>
+                                <button class="option-btn" data-material="mahogany" title="Mahogany">
+                                    <img src="assets/textures/wood.png" alt="Mahogany">
+                                    <div style="position:absolute; inset:0; background:#6b2e2e; mix-blend-mode:multiply;"></div>
                                 </button>
                                 <button class="option-btn" data-material="brick" title="Brick">
                                     <img src="assets/textures/brick.png" alt="Brick">
@@ -55,22 +75,26 @@
                                     <img src="assets/textures/sheetrock.png" alt="Sheetrock">
                                 </button>
                                 <button class="option-btn" data-material="terracotta" title="Terracotta">
-                                    <div class="solid-color" style="background: #a34b2f; width: 100%; height: 100%;"></div>
+                                    <img src="assets/textures/terracotta.png" alt="Terracotta">
                                 </button>
                                 <button class="option-btn" data-material="grass" title="Grass">
-                                    <div class="solid-color" style="background: #4CAF50; width: 100%; height: 100%;"></div>
+                                    <img src="assets/textures/grass.png" alt="Grass">
                                 </button>
                                 <button class="option-btn" data-material="asphalt" title="Asphalt">
                                     <div class="solid-color" style="background: #333333; width: 100%; height: 100%;"></div>
                                 </button>
                                 <button class="option-btn" data-material="marble" title="Marble">
-                                    <div class="solid-color" style="background: #f0f0f0; width: 100%; height: 100%; border: 1px solid rgba(0,0,0,0.1);"></div>
+                                    <img src="assets/textures/marble.png" alt="Marble">
                                 </button>
                                 <button class="option-btn" data-material="cobblestone" title="Cobblestone">
-                                    <div class="solid-color" style="background: #55555a; width: 100%; height: 100%;"></div>
+                                    <img src="assets/textures/cobblestone.png" alt="Cobblestone">
+                                </button>
+                                <button class="option-btn" data-material="slate" title="Slate">
+                                    <img src="assets/textures/cobblestone.png" alt="Slate">
+                                    <div style="position:absolute; inset:0; background:#5a636a; mix-blend-mode:multiply;"></div>
                                 </button>
                                 <button class="option-btn" data-material="shingles" title="Roof Shingles">
-                                    <div class="solid-color" style="background: #222228; width: 100%; height: 100%;"></div>
+                                    <img src="assets/textures/shingles.png" alt="Roof Shingles">
                                 </button>
                                 <button class="option-btn" data-material="glass" title="Glass">
                                     <div class="solid-color" style="background: rgba(169, 208, 245, 0.5); width: 100%; height: 100%; border: 1px solid white;"></div>
@@ -224,6 +248,17 @@
                             <button id="clear-btn" class="action-btn danger" style="margin-top: 0.35rem; width: 100%;">Clear Scene</button>
                         </div>
                     </section>
+
+                    <section class="tool-section" id="cloud-section">
+                        <button class="section-toggle">Local Server</button>
+                        <div class="section-body">
+                            <p class="section-hint">Saves to your local Express server (localhost:3000). Start <strong>launch.bat</strong> to enable.</p>
+                            <div class="actions-row">
+                                <button type="button" id="cloud-save-btn" class="action-btn" title="Save to local server DB">💾 Save</button>
+                                <button type="button" id="cloud-gallery-btn" class="action-btn secondary" title="Browse saved builds">🗂 Gallery</button>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
 
@@ -275,6 +310,32 @@
             </ul>
         </div>
     </div>
+    <!-- Cloud Save Modal -->
+    <div id="cloud-save-backdrop" class="help-backdrop" hidden>
+        <div class="help-dialog cloud-dialog" role="dialog" aria-modal="true" aria-labelledby="cloud-save-title">
+            <button type="button" class="help-close cloud-modal-close" aria-label="Close">×</button>
+            <h2 id="cloud-save-title">Save to Local Server</h2>
+            <label class="field-label" for="cloud-save-name">Blueprint name</label>
+            <input type="text" id="cloud-save-name" class="field-input" placeholder="e.g. Foundation v2" autocomplete="off">
+            <label class="field-label" for="cloud-save-project" style="margin-top:0.75rem;">Project</label>
+            <select id="cloud-save-project" class="field-select"></select>
+            <div class="actions-row" style="margin-top:0.75rem;">
+                <input type="text" id="cloud-new-project-name" class="field-input" placeholder="New project name…" style="flex:1;">
+                <button type="button" id="cloud-new-project-btn" class="action-btn secondary">+ New</button>
+            </div>
+            <button type="button" id="cloud-save-submit" class="action-btn" style="width:100%;margin-top:1rem;">Save Blueprint</button>
+        </div>
+    </div>
+
+    <!-- Cloud Gallery Modal -->
+    <div id="cloud-gallery-backdrop" class="help-backdrop" hidden>
+        <div class="help-dialog cloud-dialog cloud-dialog--gallery" role="dialog" aria-modal="true" aria-labelledby="cloud-gallery-title">
+            <button type="button" class="help-close cloud-modal-close" aria-label="Close">×</button>
+            <h2 id="cloud-gallery-title">Saved Builds</h2>
+            <div id="cloud-gallery-grid" class="gallery-grid">Loading…</div>
+        </div>
+    </div>
+
     <script type="module" src="main.js"></script>
 </body>
 </html>
