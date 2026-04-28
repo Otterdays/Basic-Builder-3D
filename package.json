@@ -1,0 +1,10 @@
+{
+  "name": "builder-3d",
+  "version": "1.0.1",
+  "description": "3D Construction Builder Scene",
+  "main": "main.js",
+  "scripts": {
+    "dev": "npx -y serve ."
+  },
+  "dependencies": {}
+}

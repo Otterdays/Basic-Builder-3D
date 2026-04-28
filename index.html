@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Builder - Construction Scene</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%2300f2ff' width='32' height='32' rx='6'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='%230a0a0c' font-size='16' font-weight='800'%3EB%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="loading-screen" class="loading-screen" aria-live="polite" aria-busy="true">
+        <p class="loading-screen__text">Loading textures…</p>
+    </div>
+    <div id="toast-host" class="toast-host" aria-live="polite"></div>
+    <input type="file" id="load-file" class="visually-hidden" accept=".json,application/json" />
+    <div id="app">
+        <canvas id="builder-canvas"></canvas>
+        
+        <div id="ui-overlay">
+            <header>
+                <h1>3D BUILDER <span>CONSTRUCTION</span></h1>
+                <span id="app-version-pill" class="app-version-pill" title="Release version">—</span>
+            </header>
+            
+            <div id="toolbar">
+                <div id="toolbar-scroll">
+                    <section class="tool-section">
+                        <button class="section-toggle">Materials</button>
+                        <div class="section-body">
+                            <div class="options-grid" id="material-options">
+                                <button class="option-btn active" data-material="concrete" title="Concrete">
+                                    <img src="assets/textures/concrete.png" alt="Concrete">
+                                </button>
+                                <button class="option-btn" data-material="wood" title="Wood">
+                                    <img src="assets/textures/wood.png" alt="Wood">
+                                </button>
+                                <button class="option-btn" data-material="brick" title="Brick">
+                                    <img src="assets/textures/brick.png" alt="Brick">
+                                </button>
+                                <button class="option-btn" data-material="black_iron" title="Black Iron">
+                                    <img src="assets/textures/black_iron.png" alt="Black Iron">
+                                </button>
+                                <button class="option-btn" data-material="sheetrock" title="Sheetrock">
+                                    <img src="assets/textures/sheetrock.png" alt="Sheetrock">
+                                </button>
+                                <button class="option-btn" data-material="terracotta" title="Terracotta">
+                                    <div class="solid-color" style="background: #a34b2f; width: 100%; height: 100%;"></div>
+                                </button>
+                                <button class="option-btn" data-material="grass" title="Grass">
+                                    <div class="solid-color" style="background: #4CAF50; width: 100%; height: 100%;"></div>
+                                </button>
+                                <button class="option-btn" data-material="asphalt" title="Asphalt">
+                                    <div class="solid-color" style="background: #333333; width: 100%; height: 100%;"></div>
+                                </button>
+                                <button class="option-btn" data-material="marble" title="Marble">
+                                    <div class="solid-color" style="background: #f0f0f0; width: 100%; height: 100%; border: 1px solid rgba(0,0,0,0.1);"></div>
+                                </button>
+                                <button class="option-btn" data-material="cobblestone" title="Cobblestone">
+                                    <div class="solid-color" style="background: #55555a; width: 100%; height: 100%;"></div>
+                                </button>
+                                <button class="option-btn" data-material="shingles" title="Roof Shingles">
+                                    <div class="solid-color" style="background: #222228; width: 100%; height: 100%;"></div>
+                                </button>
+                                <button class="option-btn" data-material="glass" title="Glass">
+                                    <div class="solid-color" style="background: rgba(169, 208, 245, 0.5); width: 100%; height: 100%; border: 1px solid white;"></div>
+                                </button>
+                                <button class="option-btn" data-material="water" title="Water">
+                                    <div class="solid-color" style="background: rgba(0, 150, 255, 0.7); width: 100%; height: 100%; border: 1px solid white;"></div>
+                                </button>
+                                <button class="option-btn" data-material="pex_red" title="PEX (Red)">
+                                    <div class="solid-color" style="background: #ff3333; width: 100%; height: 100%;"></div>
+                                </button>
+                                <button class="option-btn" data-material="pex_blue" title="PEX (Blue)">
+                                    <div class="solid-color" style="background: #3366ff; width: 100%; height: 100%;"></div>
+                                </button>
+                            </div>
+                            <div class="actions-row" style="margin-top: 0.75rem;">
+                                <button type="button" id="paint-outer-btn" class="action-btn small">Paint Outer</button>
+                                <button type="button" id="paint-inner-btn" class="action-btn small">Paint Zone</button>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="tool-section">
+                        <button class="section-toggle">Items</button>
+                        <div class="section-body">
+                            <div class="options-grid" id="item-options">
+                                <button class="option-btn active" data-item="block" title="Block">
+                                    <div class="icon-cube"></div>
+                                </button>
+                                <button class="option-btn" data-item="beam" title="Beam">
+                                    <div class="icon-beam"></div>
+                                </button>
+                                <button class="option-btn" data-item="slab" title="Slab">
+                                    <div class="icon-slab"></div>
+                                </button>
+                                <button class="option-btn" data-item="pipe" title="Iron Pipe">
+                                    <div class="icon-pipe"></div>
+                                </button>
+                                <button class="option-btn" data-item="plate" title="Wall Plate">
+                                    <div class="icon-plate"></div>
+                                </button>
+                                <button class="option-btn" data-item="hook" title="Steel Hook">
+                                    <div class="icon-hook"></div>
+                                </button>
+                                <button class="option-btn" data-item="lumber" title="2x4 Lumber">
+                                    <div class="icon-lumber"></div>
+                                </button>
+                                <button class="option-btn" data-item="pot" title="Planter Pot">
+                                    <div class="icon-pot"></div>
+                                </button>
+                                <button class="option-btn" data-item="pex" title="PEX Tubing">
+                                    <div class="icon-pex"></div>
+                                </button>
+                                <button class="option-btn" data-item="spray" title="Pipe Leak (Spray)">
+                                    <div class="icon-spray"></div>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="tool-section">
+                        <button class="section-toggle">Takeoff</button>
+                        <div class="section-body">
+                            <div id="takeoff-panel" class="takeoff-panel">
+                                <pre id="takeoff-body" class="takeoff-body">—</pre>
+                            </div>
+                            <button type="button" id="export-takeoff-btn" class="action-btn secondary" title="Copy takeoff to clipboard" style="margin-top: 0.5rem; width: 100%;">Copy takeoff (TSV)</button>
+                        </div>
+                    </section>
+
+                    <section class="tool-section">
+                        <button class="section-toggle">Site & grid</button>
+                        <div class="section-body">
+                            <div id="site-readout" class="site-readout" aria-live="polite">Cursor —</div>
+                            <div class="actions-row" style="margin-top:0.5rem">
+                                <button type="button" id="major-grid-btn" class="action-btn secondary" title="Toggle 5m major lines">5m major grid</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="tool-section">
+                        <button class="section-toggle">Measure</button>
+                        <div class="section-body">
+                            <p class="section-hint">Clicks: A → B (world units). <kbd>T</kbd> to toggle</p>
+                            <div class="actions-row">
+                                <button type="button" id="measure-toggle" class="action-btn secondary" title="Toggle measure (T)">Measure</button>
+                                <button type="button" id="measure-clear" class="action-btn" title="Clear">Clear</button>
+                            </div>
+                            <div id="measure-readout" class="measure-readout" style="margin-top: 0.5rem;">—</div>
+                        </div>
+                    </section>
+
+                    <section class="tool-section">
+                        <button class="section-toggle">Build level</button>
+                        <div class="section-body">
+                            <label class="field-label" for="build-level">Floor / lift (new parts)</label>
+                            <select id="build-level" class="field-select" title="New placements get this level">
+                                <option value="0" selected>0 (grade)</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <label class="check-row">
+                                <input type="checkbox" id="level-filter" />
+                                <span>Show only this level</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="tool-section">
+                        <button class="section-toggle">Lighting</button>
+                        <div class="section-body">
+                            <select id="lighting-preset" class="field-select" title="Site time-of-day (L)">
+                                <option value="work" selected>Work (bright)</option>
+                                <option value="dusk">Dusk (warm)</option>
+                                <option value="night">Night (lamp)</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <section class="tool-section">
+                        <button class="section-toggle">View & Tools</button>
+                        <div class="section-body">
+                            <div class="actions-row">
+                                <button type="button" id="fp-toggle" class="action-btn fp-toggle" title="Walk the site in first person (collision on parts)">Walk (first person)</button>
+                                <button type="button" id="ortho-toggle" class="action-btn" title="Toggle Orthographic Plan View (V)">Plan View</button>
+                                <button type="button" id="whats-new-btn" class="action-btn secondary" title="Release notes — what changed this version">What’s new</button>
+                                <button type="button" id="help-btn" class="action-btn secondary" title="Shortcuts (?)" accesskey="h">Help / ?</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="tool-section">
+                        <button class="section-toggle">Blueprint</button>
+                        <div class="section-body">
+                            <div class="actions-row">
+                                <button type="button" id="save-btn" class="action-btn">Save JSON</button>
+                                <button type="button" id="load-btn" class="action-btn">Load JSON…</button>
+                            </div>
+                            <button type="button" id="copy-blueprint-btn" class="action-btn secondary" style="margin-top: 0.4rem; width: 100%;" title="Copy blueprint JSON to clipboard">Copy JSON to clipboard</button>
+                        </div>
+                    </section>
+
+                    <section class="tool-section actions">
+                        <button class="section-toggle">Actions</button>
+                        <div class="section-body">
+                            <div class="actions-row">
+                                <button id="undo-btn" class="action-btn" title="Ctrl+Z">Undo</button>
+                                <button id="redo-btn" class="action-btn" title="Ctrl+Y or Ctrl+Shift+Z">Redo</button>
+                            </div>
+                            <button id="clear-btn" class="action-btn danger" style="margin-top: 0.35rem; width: 100%;">Clear Scene</button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div id="controls-hint" class="controls-hint">
+                <p>1–9 Item · M material · G grid · R rotate · X/Y/Z axis · <strong>Alt</strong> ¼ m snap</p>
+                <p>Ctrl+Z / Ctrl+Y undo · redo · <strong>Shift+click</strong> or <strong>Del</strong> remove · <kbd>V</kbd> plan · <kbd>F</kbd> frame · <kbd>Home</kbd> reset · <kbd>`</kbd> FPS</p>
+                <p>Walk: <strong>WASD</strong> · <strong>Space</strong> jump · <strong>Esc</strong> exit · click view to lock mouse</p>
+            </div>
+        </div>
+    </div>
+    <div id="fp-crosshair" class="fp-crosshair" hidden aria-hidden="true"></div>
+    <div id="compass-hud" class="compass-hud" aria-hidden="true">
+        <div class="compass-hud__inner">
+            <span class="compass-hud__n" title="World −Z = North">N</span>
+            <div class="compass-hud__axes">
+                <span class="axis x">+X</span>
+                <span class="axis z">+Z</span>
+            </div>
+        </div>
+    </div>
+    <div id="stats-overlay" class="stats-overlay" hidden aria-live="polite">—</div>
+    <div id="update-backdrop" class="help-backdrop update-backdrop" hidden>
+        <div class="help-dialog update-dialog" role="dialog" aria-modal="true" aria-labelledby="update-title">
+            <button type="button" class="help-close" id="update-close-btn" aria-label="Close">×</button>
+            <h2 id="update-title">What’s new</h2>
+            <p id="update-date" class="update-dialog__date" aria-live="polite"></p>
+            <ul id="update-list" class="help-list update-dialog__list"></ul>
+            <button type="button" id="update-dismiss-btn" class="action-btn update-dialog__action">Got it</button>
+        </div>
+    </div>
+    <div id="help-backdrop" class="help-backdrop" hidden>
+        <div class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title">
+            <button type="button" class="help-close" id="help-close" aria-label="Close">×</button>
+            <h2 id="help-title">Shortcuts & tools</h2>
+            <ul class="help-list">
+                <li><kbd>1</kbd>–<kbd>9</kbd> — select piece</li>
+                <li><kbd>M</kbd> — cycle material · <kbd>G</kbd> — grid</li>
+                <li><kbd>R</kbd> — rotate ghost · <kbd>X</kbd> <kbd>Y</kbd> <kbd>Z</kbd> — rotation axis</li>
+                <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> — undo / redo</li>
+                <li><kbd>T</kbd> — measure (click A &amp; B) · <kbd>P</kbd> — repeat last at ghost</li>
+                <li><kbd>V</kbd> — toggle plan (ortho) view · <kbd>L</kbd> — cycle lighting</li>
+                <li><kbd>V</kbd> — plan view (orthographic top) · <kbd>F</kbd> — frame all · <kbd>Home</kbd> — reset camera</li>
+                <li><kbd>Del</kbd> / <kbd>Backspace</kbd> — remove part under cursor (build mode)</li>
+                <li><kbd>`</kbd> (backtick) — FPS &amp; part count overlay · hold <kbd>Alt</kbd> — ¼ m grid snap</li>
+                <li><kbd>Esc</kbd> — exit walk, close help, or turn off measure</li>
+                <li>What’s new — toolbar button; Esc closes dialogs (update modal first).</li>
+                <li><kbd>?</kbd> — this help · blueprint auto‑saves a browser draft while you build</li>
+                <li>Build level — new parts are tagged; filter visibility with “Show only this level”.</li>
+            </ul>
+        </div>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

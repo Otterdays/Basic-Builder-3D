@@ -1,0 +1,21 @@
+---
+description: Builder-3D release workflow, update modal, and version sync
+alwaysApply: true
+---
+
+# Builder-3D — project rules
+
+## Update modal & version
+
+- **`main.js`**: `APP_RELEASE` (`version`, `dateLabel`, `highlights`) is the canonical in-app release identity. The update modal and `#app-version-pill` read from it. `localStorage` key `builder3d-seen-release` stores the last dismissed version.
+- **Shipping a release**: Bump `APP_RELEASE` and `package.json` `"version"` together; append `DOCS/CHANGELOG.md`; amend `DOCS/SUMMARY.md`; note in `DOCS/SCRATCHPAD.md`. Follow **`DOCS/RULES_RELEASES.md`** for the full checklist.
+
+## Docs
+
+- Do not delete content in `DOCS/*` — append or annotate per preservation headers.
+- Status docs: `SCRATCHPAD`, `CHANGELOG`, `SBOM` when relevant.
+
+## Code
+
+- Match existing `main.js` patterns; no new dependencies without SBOM update and justification.
+- Blueprint format version remains **`BLUEPRINT_VERSION`** (separate from app semver).

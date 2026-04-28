@@ -1,0 +1,20 @@
+<!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
+# SUMMARY
+Project: Builder-3D
+[AMENDED 2026-04-27]: **v1.0.1** — **Update 3 (Expansion)**: Premium **Procedural Texture Generator** (Marble, Cobblestone, Shingles, upgraded Grass/Asphalt); expanded material palette; image fallback system; performance-optimized 512px canvas generation.
+[AMENDED 2026-04-27]: **v1.0.1** — **Update modal** + header version pill (`APP_RELEASE`); **What’s new** toolbar + `localStorage` dismiss key; release rules: `DOCS/RULES_RELEASES.md`, `.cursor/rules/builder-3d-project.mdc`.
+[AMENDED 2026-04-27]: **v1.0.0** — **Update 2 (QoL)**: orthographic **Plan View** / **`V`** + resize wiring; live **compass** rotation; **Home** / **F** camera framing; blueprint **copy to clipboard**; **local draft** autosave + restore prompt; **Esc** (walk/help/measure); **Del** delete; backtick (**`**) stats FPS; hold **Alt** for **¼ m** snap; **reduced-motion** disables spray particles. See `CHANGELOG` / `ARCHITECTURE` (Update 2).
+[AMENDED 2026-04-23]: **v0.8.0** — **PEX** tubing + materials, intuitive PEX grid snapping; first-person: **WASD** / **Space** / pointer lock, 100 m walk pad, ground ray (inner then outer) + AABB vs parts. See `DOCS/ARCHITECTURE.md` (first-person section).
+Status: v0.7.0 — **Plan View** (Ortho/V) + **Jump** physics (Space).
+[AMENDED 2026-04-23]: v0.6.0 — **Update 1** roadmap items complete (measure, grid/readout, lighting, flash, help, overlap, repeat, levels, compass); see `roadmap.md` (Later backlog only).
+[AMENDED 2026-04-23]: v0.4.1 — First-person walk mode (WASD + pointer lock, AABB vs parts, safe spawn at center).
+[AMENDED 2026-04-23]: v0.4.0 — Update 1 core QoL (undo/redo, blueprint, takeoff, shortcuts, texture fallbacks).
+[AMENDED 2026-04-23]: Prior v0.3.0 line — Expanded materials and items, including simulated outdoor materials.
+Goal: A premium 3D construction builder scene using vanilla JS and Three.js.
+
+## Quick Links
+- [roadmap.md](file:///c:/Users/home/Desktop/Builder-3D/roadmap.md)
+- [RULES_RELEASES.md](file:///c:/Users/home/Desktop/Builder-3D/DOCS/RULES_RELEASES.md) — version / update modal checklist
+- [SCRATCHPAD.md](file:///c:/Users/home/Desktop/Builder-3D/DOCS/SCRATCHPAD.md)
+- [ARCHITECTURE.md](file:///c:/Users/home/Desktop/Builder-3D/DOCS/ARCHITECTURE.md)
+- [STYLE_GUIDE.md](file:///c:/Users/home/Desktop/Builder-3D/DOCS/STYLE_GUIDE.md)
