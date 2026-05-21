@@ -3090,7 +3090,7 @@ class BuilderApp {
         this.particles.push(p);
     }
 
-    // â”€â”€ Cloud / Backend methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Cloud / Backend methods
 
     async checkBackend() {
         try {
