@@ -21,7 +21,7 @@ const TEXTURE_NAMES = [
 
 const BLUEPRINT_VERSION = 3;
 
-/** Shown in the update modal â€” bump with each user-facing release (see DOCS/RULES_RELEASES.md). */
+/** Shown in the update modal - bump with each user-facing release (see DOCS/RULES_RELEASES.md). */
 const STORAGE_SEEN_RELEASE_KEY = 'builder3d-seen-release';
 const APP_RELEASE = {
     version: '1.1.0',
@@ -30,7 +30,7 @@ const APP_RELEASE = {
         'WebGL Real-time Shadow Mapping & Sun Position Slider in the Lighting sidebar.',
         'Site atmosphere pass: gradient sky, horizon terrain silhouettes, haze, and warmer daylight.',
         'Paintbrush Tool & Eyedropper (press I or middle-click placed block to copy it, use paintbrush to paint new materials onto placed blocks).',
-        'Dust Burst Placement VFX â€” color-coded particles matching placed materials (wood, stone, water, glass).',
+        'Dust Burst Placement VFX - color-coded particles matching placed materials (wood, stone, water, glass).',
         'New geometries: Roof Wedges (Triangle Prisms) and Staircases (climbable in first-person mode!).',
         'Clone hovered parts with C for faster repeated architectural layouts.',
         'Full Undo/Redo support for paintbrush material changes.',
@@ -160,13 +160,13 @@ class BuilderApp {
             this.createGhost();
             this.bindEvents();
             this.updateTakeoff();
-            this.showToast('Ready â€” place parts or load a blueprint.', 'info');
+            this.showToast('Ready - place parts or load a blueprint.', 'info');
             this.animate();
-            // Non-blocking backend check â€” degrades gracefully if server not running
+            // Non-blocking backend check - degrades gracefully if server not running
             this.checkBackend().catch(() => {});
         } catch (err) {
             console.error(err);
-            this.showToast('Startup error â€” see console.', 'danger');
+            this.showToast('Startup error - see console.', 'danger');
         } finally {
             this.setLoading(false);
             setTimeout(() => {
@@ -559,7 +559,7 @@ class BuilderApp {
                 },
                 undefined,
                 () => {
-                    console.warn(`Texture missing or failed: ${url} â€” using fallback.`);
+                    console.warn(`Texture missing or failed: ${url} - using fallback.`);
                     resolve(this.createFallbackTexture(name));
                 }
             );
@@ -896,7 +896,7 @@ class BuilderApp {
                 this.showToast('Click the 3D view to lock the mouse and look around.', 'info');
             });
         }
-        this.showToast('WASD: move Â· Space: jump Â· Mouse: look Â· Button: leave walk', 'info');
+        this.showToast('WASD: move - Space: jump - Mouse: look - Button: leave walk', 'info');
     }
 
     exitFirstPerson() {
@@ -2298,7 +2298,7 @@ class BuilderApp {
             /* storage disabled */
         }
         if (!silent) {
-            this.showToast(collapsed ? 'Tools panel hidden â€” B or â€º to open' : 'Tools panel open', 'info');
+            this.showToast(collapsed ? 'Tools panel hidden - B or > to open' : 'Tools panel open', 'info');
         }
     }
 
@@ -2441,7 +2441,7 @@ class BuilderApp {
         this.showToast('Next fence post placed.', 'info');
     }
 
-    /** Sidebar/header tooltips â€” faster than native `title` (~1s OS delay). */
+    /** Sidebar/header tooltips - faster than native `title` (~1s OS delay). */
     initFastTooltips() {
         const TOOLTIP_DELAY_MS = 200;
         const roots = [
@@ -2931,7 +2931,7 @@ class BuilderApp {
                 else if (this.currentAxis === 'y') this.ghostRotation.y += step;
                 else if (this.currentAxis === 'z') this.ghostRotation.z += step;
                 if (this.ghostObject) this.ghostObject.rotation.copy(this.ghostRotation);
-                this.showToast(`Rotated âˆ’${this.currentAxis.toUpperCase()}`, 'info');
+                this.showToast(`Rotated -${this.currentAxis.toUpperCase()}`, 'info');
                 return;
             }
             if (e.key.toLowerCase() === 'r' && !mod) {
@@ -3106,7 +3106,7 @@ class BuilderApp {
         const section = document.getElementById('cloud-section');
         if (!section) return;
         section.style.opacity = this._backendAvailable ? '1' : '0.45';
-        section.title = this._backendAvailable ? '' : 'Backend server not running â€” start launch.bat';
+        section.title = this._backendAvailable ? '' : 'Backend server not running - start launch.bat';
     }
 
     captureScreenshot() {
@@ -3121,11 +3121,11 @@ class BuilderApp {
     // Open the Cloud Save modal
     async openCloudSave() {
         if (!this._backendAvailable) {
-            this.showToast('Backend not running â€” start launch.bat first.', 'danger');
+            this.showToast('Backend not running - start launch.bat first.', 'danger');
             return;
         }
         if (this.objects.length === 0) {
-            this.showToast('Nothing to save â€” place some parts first.', 'info');
+            this.showToast('Nothing to save - place some parts first.', 'info');
             return;
         }
         try {
@@ -3193,7 +3193,7 @@ class BuilderApp {
     // Open the Cloud Gallery / Load modal
     async openCloudGallery() {
         if (!this._backendAvailable) {
-            this.showToast('Backend not running â€” start launch.bat first.', 'danger');
+            this.showToast('Backend not running - start launch.bat first.', 'danger');
             return;
         }
         try {
@@ -3220,7 +3220,7 @@ class BuilderApp {
                 }
                 <div class="gallery-info">
                     <span class="gallery-name">${bp.name}</span>
-                    <span class="gallery-meta">${bp.project_name} Â· ${bp.part_count} parts Â· v${bp.version}</span>
+                    <span class="gallery-meta">${bp.project_name} - ${bp.part_count} parts - v${bp.version}</span>
                 </div>
             </div>
         `).join('');
