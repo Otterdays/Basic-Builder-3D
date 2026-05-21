@@ -2,6 +2,12 @@
 # SCRATCHPAD
 
 ## Active Tasks
+[AMENDED 2026-05-21]: **v1.1.0** — Atmosphere pass shipped: gradient sky, terrain horizon, haze ring, hemisphere fill, warmer directional light, softer fog.
+[AMENDED 2026-05-21]: Docs synced — CHANGELOG/SUMMARY/ARCHITECTURE/AGENTS for sidebar dock, collapse (`B`), resize, fast tooltips, panel QoL.
+[AMENDED 2026-05-21]: **v1.1.0** — Premium Enhancements shipped: shadows/sun slider, paintbrush + eyedropper, placement VFX, wedge/stairs, `C` clone, collapsible/resizable tools panel.
+[AMENDED 2026-05-21]: **v1.1.0** — Premium Enhancements (shadows, sun angle slider, eyedropper, paintbrush tool, placement particles, wedges, stairs) — planning & awaiting user feedback.
+[AMENDED 2026-05-21]: **Agent docs** — root `AGENTS.md`, `DOCS/RULES_AGENTS.md`, expanded `.cursor/rules/builder-3d-project.mdc`, ARCHITECTURE/RULES_RELEASES/SUMMARY links.
+[AMENDED 2026-05-21]: **v1.0.3** — Grassy yard (`U`), fence kit + snap/N/], Paint Both (`H`), blueprint v3 site, QoL Q counter-rotate, `0` item key — shipped.
 [AMENDED 2026-04-27]: **v1.0.1** — Update modal (`APP_RELEASE` + `builder3d-seen-release`), What’s new button, header version pill, Esc stack, `DOCS/RULES_RELEASES.md`, `.cursor/rules/builder-3d-project.mdc`, STYLE_GUIDE + ARCHITECTURE amended.
 [AMENDED 2026-04-27]: Shipped **v1.0.0 Update 2**: plan ortho + V, compass rotate, camera Home/F, copy JSON clipboard, localStorage draft autosave + restore prompt, Esc / Del / backtick FPS stats, Alt ¼ m snap, reduced-motion particles off, dup PEX button fix — docs SCRATCHPAD/SUMMARY/SBOM/CHANGELOG/ARCHITECTURE/roadmap.
 - [x] Project initialization <!-- id: 0 -->
@@ -19,11 +25,17 @@
 - [ ] Mobile/Touch support <!-- id: 10 -->
 
 ## Last 5 Actions
-1. Architected and built a complete Local Backend System (`server/index.js`, `server/db.js`, `server/routes`).
-2. Implemented a zero-dependency JSON storage engine to avoid native compilation issues on Windows.
-3. Added full `projects` and `blueprints` REST APIs with auto-versioning history and gallery thumbnails.
-4. Integrated a thin frontend `api.js` client and wired up a premium UI for Cloud Save and Gallery browsing.
-5. Replaced the generic `serve` command in `launch.bat` with the new custom Express server.
+1. Updated DOCS (CHANGELOG, SUMMARY, ARCHITECTURE, AGENTS) for tools-panel UX.
+2. Sidebar collapse (`B`), drag-resize + dbl-click reset, expand tab, expand/collapse all sections, scroll-to-active tile.
+2. v1.1.0: added clone-under-cursor shortcut (`C`) on top of premium builder tools; docs and help copy updated.
+1. Full-height left `#sidebar` dock (top–bottom), larger tiles/buttons, renamed primary sections, viewport chrome for hints.
+2. Fast sidebar tooltips (`initFastTooltips`, 200ms) — replaces native `title` delay on `#sidebar`.
+2. Added `AGENTS.md`, `DOCS/RULES_AGENTS.md`; expanded `.cursor/rules/builder-3d-project.mdc` and doc cross-links.
+2. Designed and drafted the implementation plan for v1.1.0 Premium Enhancements (shadows, sun angle slider, eyedropper, paintbrush tool, placement particles, wedges, stairs).
+3. v1.0.3: grassy yard, fence items/snap, blueprint site v3, UI + shortcuts (U/H/N/]/Q/0).
+3. Architected and built a complete Local Backend System (`server/index.js`, `server/db.js`, `server/routes`).
+4. Implemented a zero-dependency JSON storage engine to avoid native compilation issues on Windows.
+5. Added full `projects` and `blueprints` REST APIs with auto-versioning history and gallery thumbnails.
 [AMENDED 2026-04-27]: Git remote origin `https://github.com/Otterdays/Basic-Builder-3D` — pushed branch `main` (repo was empty).
 4. Expanded the sidebar UI to include the new architectural materials.
 5. Updated project documentation (SUMMARY, SBOM, CHANGELOG) to v1.0.1.

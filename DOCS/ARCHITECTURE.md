@@ -21,11 +21,13 @@ graph TD
 - **Outer Plane**: A 100x100 `PlaneGeometry` acting as the global floor.
 - **Build Zone**: A 20x20 `PlaneGeometry` slightly raised to prevent Z-fighting, matching the grid area.
 - Both planes support dynamic material assignment independently of built objects.
+- **[AMENDED 2026-05-21] Site materials (`v1.0.3`)**: `siteGround` tracks `outer` / `inner` material keys; `applyGroundMaterials`, `paintBothGround` (**`H`**), `applyGrassyYardPreset` (**`U`** — grass + dusk lighting). Blueprint **v3** persists `site` via `buildBlueprintPayload()` / `applySiteFromBlueprint`.
 
 ## Supported Geometries
 - **Boxes**: Blocks, Beams, Slabs, 2x4 Lumber, Wall Plates.
 - **Cylinders**: Columns, Pipes, Planter Pots.
 - **Torus**: Steel Hooks.
+- **[AMENDED 2026-05-21] Fence kit (`v1.0.3`)**: `fence_post` (0.1×1.2×0.1), `fence_rail` (2×0.07×0.07), `fence_panel` (2×0.9×0.04); wood default via `setActiveItem`; `trySnapFenceGhost` (post chain +2 m, rail/panel on post); `placeNextFencePost` (**`N`**).
 
 ## Advanced Systems
 - **Transformation**: 3-Axis rotation (X, Y, Z) with 90-degree snapping.
@@ -34,7 +36,7 @@ graph TD
 
 ## [AMENDED 2026-04-23]: Runtime structure (single-file app)
 - All application logic lives in `main.js` (`BuilderApp`): scene, textures, placement, **undo/redo history** (place / remove / clear operations with serializable mesh snapshots), **blueprint** import/export (JSON `v` + `parts[]`), **takeoff** aggregation, toasts, and keyboard shortcuts.
-- UI is `index.html` + `style.css` (toolbar, loading overlay, toast host, file input for load).
+- UI is `index.html` + `style.css` (sidebar/tools panel, loading overlay, toast host, file input for load).
 - Textures load from `assets/textures/*.png` with **canvas fallback** when a file is missing or fails; a **loading overlay** shows until the first texture batch completes.
 
 ## [AMENDED 2026-04-23]: First-person view
@@ -53,6 +55,14 @@ graph TD
 - **Ghost overlap**: `Box3.setFromObject(ghost)` vs each part; tint + block place; `meshIntersectsPlaced` for **P** repeat.
 - **Levels**: `userData.level` (0–4) on meshes; takeoff TSV includes `level` rows; blueprint `parts[].level`; **Show only this level** toggles `mesh.visible`.
 - **Compass / help**: static DOM HUD; modal help panel.
+
+## [AMENDED 2026-05-21]: Tools panel / sidebar (`v1.1.0` UI)
+- **Layout**: `#ui-overlay` is a two-column grid — **`--sidebar-slot-width`** (0 when collapsed) + **`viewport-chrome`** (shortcut bar). **`#sidebar`** is a full-viewport-height left dock: header (title, version pill, hint), scrollable **`#toolbar-scroll`** (collapsible `.tool-section`s), footer (**Expand all** / **Collapse all**).
+- **Collapse**: `body.sidebar-collapsed` sets slot width to 0; **`#sidebar-expand-tab`** (fixed left) restores. Toggle via **`#sidebar-collapse-btn`**, **`B`**, or `toggleSidebarCollapsed()`; persisted **`builder3d-sidebar-collapsed`**.
+- **Resize**: **`#sidebar-resizer`** drag updates CSS **`--sidebar-width`** (clamped 260–480px); persisted **`builder3d-sidebar-width`**; double-click resizer resets default. `body.sidebar-resizing` disables width transition during drag.
+- **Tooltips**: `initFastTooltips()` strips native `title` on `#sidebar` controls and shows **`#fast-tooltip`** after ~200ms (positioned to the right of the target).
+- **Selection UX**: `setActiveMaterial` / `setActiveItem` call `scrollSidebarToSelection()` and `ensureSidebarSectionVisible()` so keyboard (**`M`**, **`1`–`9`**) and clicks reveal the active tile.
+- **Walk / HUD**: First-person crosshair centers on the build area using `--sidebar-slot-width`; stats overlay `left` follows the same variable.
 
 ## [AMENDED 2026-04-27]: Update 2.1 — release modal (`v1.0.1`)
 - **`APP_RELEASE`** (`main.js`): semantic version + **`dateLabel`** + **`highlights[]`** for **`#update-backdrop`** modal; **`fillReleaseModalDom`** syncs title, date, and list. **`STORAGE_SEEN_RELEASE_KEY`** **`builder3d-seen-release`** compared to **`APP_RELEASE.version`**; **`maybeShowReleaseModal`** runs after **`tryRestoreDraft`** in the post-load timeout. **`openUpdateModalForced`** for toolbar without requiring a version mismatch; **`dismissUpdateModal`** persists seen version and closes.

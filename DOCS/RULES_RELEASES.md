@@ -30,4 +30,8 @@ In `main.js`:
 - After clearing `localStorage` key `builder3d-seen-release` (or bumping **`APP_RELEASE.version`**), the modal should appear after startup (after draft-restore prompt runs, if any).
 - **What’s new** in the toolbar opens the same modal without requiring a version bump.
 
-See also: **`.cursor/rules/builder-3d-project.mdc`** for agent-facing reminders.
+See also:
+
+- **`AGENTS.md`** (repository root) — agent onboarding and hard rules.
+- **`DOCS/RULES_AGENTS.md`** — doc preservation and post-task updates.
+- **`.cursor/rules/builder-3d-project.mdc`** — Cursor always-on rule summary.

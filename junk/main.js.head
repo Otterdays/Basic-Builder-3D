@@ -1,15 +1,11 @@
-import * as THREE from 'three';
+﻿import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { api } from './api.js';
 
 // [TRACE: main.js]
 const ITEM_TYPES = [
-    'block', 'beam', 'slab', 'column', 'pipe', 'plate', 'hook', 'lumber', 'pot', 'pex', 'spray',
-    'fence_post', 'fence_rail', 'fence_panel', 'paintbrush', 'wedge', 'stairs'
+    'block', 'beam', 'slab', 'pipe', 'plate', 'hook', 'lumber', 'pot', 'pex', 'spray'
 ];
-const FENCE_ITEMS = ['fence_post', 'fence_rail', 'fence_panel'];
-const FENCE_POST = 'fence_post';
-const WOOD_MATERIALS = ['wood', 'dark_wood', 'light_wood', 'mahogany'];
 const MATERIAL_KEYS = [
     'concrete', 'wood', 'brick', 'black_iron', 'sheetrock', 'terracotta', 'grass', 'asphalt', 'marble', 'cobblestone', 'shingles', 'glass', 'water', 'pex_red', 'pex_blue',
     'dark_wood', 'light_wood', 'mahogany', 'granite', 'sandstone', 'slate'
@@ -19,21 +15,17 @@ const TEXTURE_NAMES = [
     'marble', 'cobblestone', 'shingles', 'grass', 'terracotta'
 ];
 
-const BLUEPRINT_VERSION = 3;
+const BLUEPRINT_VERSION = 2;
 
-/** Shown in the update modal â€” bump with each user-facing release (see DOCS/RULES_RELEASES.md). */
+/** Shown in the update modal ΓÇö bump with each user-facing release (see DOCS/RULES_RELEASES.md). */
 const STORAGE_SEEN_RELEASE_KEY = 'builder3d-seen-release';
 const APP_RELEASE = {
-    version: '1.1.0',
-    dateLabel: '2026-05-21',
+    version: '1.0.1',
+    dateLabel: '2026-04-27',
     highlights: [
-        'WebGL Real-time Shadow Mapping & Sun Position Slider in the Lighting sidebar.',
-        'Site atmosphere pass: gradient sky, horizon terrain silhouettes, haze, and warmer daylight.',
-        'Paintbrush Tool & Eyedropper (press I or middle-click placed block to copy it, use paintbrush to paint new materials onto placed blocks).',
-        'Dust Burst Placement VFX â€” color-coded particles matching placed materials (wood, stone, water, glass).',
-        'New geometries: Roof Wedges (Triangle Prisms) and Staircases (climbable in first-person mode!).',
-        'Clone hovered parts with C for faster repeated architectural layouts.',
-        'Full Undo/Redo support for paintbrush material changes.',
+        'Premium procedural textures: Marble, Cobblestone, Shingles, and upgraded Grass/Asphalt patterns.',
+        'System: Auto-generates high-detail textures when image files are missing.',
+        'System: Expanded material palette for more architectural variety.',
         'Authors: bump APP_RELEASE with each release and mirror notes in DOCS/CHANGELOG.md (see DOCS/RULES_RELEASES.md).'
     ]
 };
@@ -105,13 +97,9 @@ class BuilderApp {
         this._measurePointCount = 0;
         this._measureLine = null;
         this.lightingPreset = 'work';
-        this.sunAngle = 45;
         this._ambientLight = null;
-        this._hemiLight = null;
         this._dirLight = null;
         this._pointAccent = null;
-        this._skyTexture = null;
-        this._horizonGroup = null;
         this.lastPlacedSnap = null;
         this.helpOpen = false;
         this._ghostBox = new THREE.Box3();
@@ -142,10 +130,6 @@ class BuilderApp {
         this._cloudGallery = [];
         this._cloudSaveTargetId = null; // blueprint id if updating existing
         this._backendAvailable = false;
-        this.siteGround = { outer: 'grass', inner: 'concrete' };
-        this._fenceCycleIdx = 0;
-        this.sidebarCollapsed = false;
-        this._sidebarResizeActive = false;
         this.init();
     }
 
@@ -155,18 +139,17 @@ class BuilderApp {
             this.setupScene();
             this.setupLighting();
             await this.loadTextures();
-            this.applyGroundMaterials(this.siteGround.outer, this.siteGround.inner);
             this.setupHelpers();
             this.createGhost();
             this.bindEvents();
             this.updateTakeoff();
-            this.showToast('Ready â€” place parts or load a blueprint.', 'info');
+            this.showToast('Ready ΓÇö place parts or load a blueprint.', 'info');
             this.animate();
-            // Non-blocking backend check â€” degrades gracefully if server not running
+            // Non-blocking backend check ΓÇö degrades gracefully if server not running
             this.checkBackend().catch(() => {});
         } catch (err) {
             console.error(err);
-            this.showToast('Startup error â€” see console.', 'danger');
+            this.showToast('Startup error ΓÇö see console.', 'danger');
         } finally {
             this.setLoading(false);
             setTimeout(() => {
@@ -208,9 +191,8 @@ class BuilderApp {
 
     setupScene() {
         this.scene = new THREE.Scene();
-        this._skyTexture = this.createSkyTexture('work');
-        this.scene.background = this._skyTexture;
-        this.scene.fog = new THREE.Fog(0x5f6a70, 28, 92);
+        this.scene.background = new THREE.Color(0x0a0a0c);
+        this.scene.fog = new THREE.Fog(0x0a0a0c, 10, 50);
 
         this.camera = new THREE.PerspectiveCamera(
             75,
@@ -227,11 +209,6 @@ class BuilderApp {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.05;
-        if (THREE.SRGBColorSpace) {
-            this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-        }
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
@@ -241,9 +218,9 @@ class BuilderApp {
 
         const planeGeo = new THREE.PlaneGeometry(100, 100);
         const planeMat = new THREE.MeshStandardMaterial({
-            color: 0x40533b,
-            roughness: 0.95,
-            metalness: 0.0
+            color: 0x1a1a1f,
+            roughness: 0.8,
+            metalness: 0.2
         });
         this.plane = new THREE.Mesh(planeGeo, planeMat);
         this.plane.rotation.x = -Math.PI / 2;
@@ -261,25 +238,17 @@ class BuilderApp {
         this.innerPlane.position.y = 0.005; // Slightly above outer plane to prevent z-fighting
         this.innerPlane.receiveShadow = true;
         this.scene.add(this.innerPlane);
-
-        this.createHorizonBackdrop();
     }
 
     setupLighting() {
-        const ambient = new THREE.AmbientLight(0xf4f0e8, 0.24);
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
         this._ambientLight = ambient;
         this.scene.add(ambient);
-
-        const hemi = new THREE.HemisphereLight(0xbfd7ef, 0x4b473c, 0.62);
-        this._hemiLight = hemi;
-        this.scene.add(hemi);
 
         const directional = new THREE.DirectionalLight(0xffffff, 1.2);
         this._dirLight = directional;
         directional.position.set(10, 20, 10);
         directional.castShadow = true;
-        directional.shadow.bias = -0.00025;
-        directional.shadow.normalBias = 0.02;
         directional.shadow.mapSize.width = 2048;
         directional.shadow.mapSize.height = 2048;
         directional.shadow.camera.left = -20;
@@ -292,150 +261,6 @@ class BuilderApp {
         this._pointAccent = point1;
         point1.position.set(-10, 5, -10);
         this.scene.add(point1);
-
-        this.updateSunPosition(this.sunAngle);
-    }
-
-    createSkyTexture(preset = 'work') {
-        const canvas = document.createElement('canvas');
-        canvas.width = 16;
-        canvas.height = 256;
-        const ctx = canvas.getContext('2d');
-        const palette = {
-            work: ['#b7cad5', '#6f8590', '#283136'],
-            dusk: ['#f4b28b', '#8d5961', '#241b28'],
-            night: ['#253653', '#101624', '#040507']
-        }[preset] || ['#b7cad5', '#6f8590', '#283136'];
-        const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        g.addColorStop(0, palette[0]);
-        g.addColorStop(0.48, palette[1]);
-        g.addColorStop(1, palette[2]);
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.magFilter = THREE.LinearFilter;
-        tex.minFilter = THREE.LinearFilter;
-        return tex;
-    }
-
-    setAtmospherePreset(preset) {
-        const fog = {
-            work: { color: 0x6a7478, near: 30, far: 96, exposure: 1.08 },
-            dusk: { color: 0x6d4a50, near: 26, far: 88, exposure: 0.98 },
-            night: { color: 0x101624, near: 16, far: 58, exposure: 0.86 }
-        }[preset] || { color: 0x6a7478, near: 30, far: 96, exposure: 1.08 };
-        if (this._skyTexture) this._skyTexture.dispose();
-        this._skyTexture = this.createSkyTexture(preset);
-        this.scene.background = this._skyTexture;
-        if (this.scene.fog) {
-            this.scene.fog.color.setHex(fog.color);
-            this.scene.fog.near = fog.near;
-            this.scene.fog.far = fog.far;
-        }
-        if (this.renderer) this.renderer.toneMappingExposure = fog.exposure;
-        if (this._horizonGroup) {
-            this._horizonGroup.visible = preset !== 'night';
-            this._horizonGroup.traverse((child) => {
-                if (child.material && child.material.color) {
-                    if (child.userData.horizonLayer === 'far') {
-                        child.material.color.setHex(preset === 'dusk' ? 0x67554a : 0x53685b);
-                        child.material.opacity = preset === 'dusk' ? 0.22 : 0.28;
-                    } else if (child.userData.horizonLayer === 'near') {
-                        child.material.color.setHex(preset === 'dusk' ? 0x3f4230 : 0x324232);
-                        child.material.opacity = preset === 'dusk' ? 0.46 : 0.58;
-                    }
-                }
-            });
-        }
-    }
-
-    createHorizonBackdrop() {
-        this._horizonGroup = new THREE.Group();
-        const ridgeGeo = new THREE.CylinderGeometry(72, 72, 9, 128, 1, true);
-        const pos = ridgeGeo.attributes.position;
-        for (let i = 0; i < pos.count; i++) {
-            const x = pos.getX(i);
-            const y = pos.getY(i);
-            const z = pos.getZ(i);
-            if (y > 0) {
-                const a = Math.atan2(z, x);
-                const ridge =
-                    Math.sin(a * 3.0 + 0.5) * 1.1 +
-                    Math.sin(a * 7.0 - 1.2) * 0.65 +
-                    Math.sin(a * 13.0) * 0.28;
-                pos.setY(i, y + ridge);
-            }
-        }
-        ridgeGeo.computeVertexNormals();
-        const ridgeMat = new THREE.MeshBasicMaterial({
-            color: 0x324232,
-            transparent: true,
-            opacity: 0.58,
-            depthWrite: false,
-            side: THREE.BackSide
-        });
-        const ridge = new THREE.Mesh(ridgeGeo, ridgeMat);
-        ridge.position.y = 3.7;
-        ridge.renderOrder = -2;
-        ridge.userData.horizonLayer = 'near';
-        this._horizonGroup.add(ridge);
-
-        const farRidgeGeo = new THREE.CylinderGeometry(92, 92, 7, 128, 1, true);
-        const farPos = farRidgeGeo.attributes.position;
-        for (let i = 0; i < farPos.count; i++) {
-            const x = farPos.getX(i);
-            const y = farPos.getY(i);
-            const z = farPos.getZ(i);
-            if (y > 0) {
-                const a = Math.atan2(z, x);
-                farPos.setY(i, y + Math.sin(a * 4.0 + 2.1) * 0.9 + Math.sin(a * 9.0) * 0.4);
-            }
-        }
-        farRidgeGeo.computeVertexNormals();
-        const farRidgeMat = new THREE.MeshBasicMaterial({
-            color: 0x53685b,
-            transparent: true,
-            opacity: 0.28,
-            depthWrite: false,
-            side: THREE.BackSide
-        });
-        const farRidge = new THREE.Mesh(farRidgeGeo, farRidgeMat);
-        farRidge.position.y = 4.2;
-        farRidge.renderOrder = -4;
-        farRidge.userData.horizonLayer = 'far';
-        this._horizonGroup.add(farRidge);
-
-        const hazeGeo = new THREE.CircleGeometry(76, 96);
-        const hazeMat = new THREE.MeshBasicMaterial({
-            color: 0x42554a,
-            transparent: true,
-            opacity: 0.18,
-            depthWrite: false,
-            side: THREE.DoubleSide
-        });
-        const haze = new THREE.Mesh(hazeGeo, hazeMat);
-        haze.rotation.x = -Math.PI / 2;
-        haze.position.y = 0.012;
-        haze.renderOrder = -3;
-        this._horizonGroup.add(haze);
-        this.scene.add(this._horizonGroup);
-    }
-
-    updateSunPosition(angle) {
-        this.sunAngle = angle;
-        if (this._dirLight) {
-            const rad = (angle * Math.PI) / 180;
-            this._dirLight.position.set(
-                Math.cos(rad) * 25,
-                20,
-                Math.sin(rad) * 25
-            );
-        }
-        const slider = document.getElementById('sun-angle-slider');
-        if (slider) {
-            slider.value = angle;
-        }
     }
 
     createFallbackTexture(name) {
@@ -559,7 +384,7 @@ class BuilderApp {
                 },
                 undefined,
                 () => {
-                    console.warn(`Texture missing or failed: ${url} â€” using fallback.`);
+                    console.warn(`Texture missing or failed: ${url} ΓÇö using fallback.`);
                     resolve(this.createFallbackTexture(name));
                 }
             );
@@ -896,7 +721,7 @@ class BuilderApp {
                 this.showToast('Click the 3D view to lock the mouse and look around.', 'info');
             });
         }
-        this.showToast('WASD: move Â· Space: jump Â· Mouse: look Â· Button: leave walk', 'info');
+        this.showToast('WASD: move ┬╖ Space: jump ┬╖ Mouse: look ┬╖ Button: leave walk', 'info');
     }
 
     exitFirstPerson() {
@@ -936,43 +761,43 @@ class BuilderApp {
         this.lightingPreset = preset;
         if (preset === 'work') {
             this._ambientLight.color.setHex(0xffffff);
-            this._ambientLight.intensity = 0.24;
-            if (this._hemiLight) {
-                this._hemiLight.color.setHex(0xbfd7ef);
-                this._hemiLight.groundColor.setHex(0x4b473c);
-                this._hemiLight.intensity = 0.62;
-            }
-            this._dirLight.color.setHex(0xfff2dc);
-            this._dirLight.intensity = 1.35;
+            this._ambientLight.intensity = 0.4;
+            this._dirLight.color.setHex(0xffffff);
+            this._dirLight.intensity = 1.2;
             this._pointAccent.color.setHex(0x00f2ff);
-            this._pointAccent.intensity = 4;
-            this.setAtmospherePreset('work');
+            this._pointAccent.intensity = 10;
+            this.scene.background.setHex(0x0a0a0c);
+            if (this.scene.fog) {
+                this.scene.fog.color.setHex(0x0a0a0c);
+                this.scene.fog.near = 10;
+                this.scene.fog.far = 50;
+            }
         } else if (preset === 'dusk') {
             this._ambientLight.color.setHex(0xffe8dd);
-            this._ambientLight.intensity = 0.22;
-            if (this._hemiLight) {
-                this._hemiLight.color.setHex(0xffc49a);
-                this._hemiLight.groundColor.setHex(0x5a4034);
-                this._hemiLight.intensity = 0.45;
-            }
+            this._ambientLight.intensity = 0.32;
             this._dirLight.color.setHex(0xffcc88);
-            this._dirLight.intensity = 0.92;
+            this._dirLight.intensity = 0.75;
             this._pointAccent.color.setHex(0xff8844);
-            this._pointAccent.intensity = 3;
-            this.setAtmospherePreset('dusk');
+            this._pointAccent.intensity = 6;
+            this.scene.background.setHex(0x1a1218);
+            if (this.scene.fog) {
+                this.scene.fog.color.setHex(0x1a1218);
+                this.scene.fog.near = 12;
+                this.scene.fog.far = 55;
+            }
         } else if (preset === 'night') {
             this._ambientLight.color.setHex(0x445566);
             this._ambientLight.intensity = 0.12;
-            if (this._hemiLight) {
-                this._hemiLight.color.setHex(0x304866);
-                this._hemiLight.groundColor.setHex(0x08090a);
-                this._hemiLight.intensity = 0.2;
-            }
             this._dirLight.color.setHex(0xaaccff);
             this._dirLight.intensity = 0.28;
             this._pointAccent.color.setHex(0x00f2ff);
             this._pointAccent.intensity = 16;
-            this.setAtmospherePreset('night');
+            this.scene.background.setHex(0x040406);
+            if (this.scene.fog) {
+                this.scene.fog.color.setHex(0x040406);
+                this.scene.fog.near = 8;
+                this.scene.fog.far = 42;
+            }
         }
         const sel = document.getElementById('lighting-preset');
         if (sel) sel.value = preset;
@@ -1039,7 +864,7 @@ class BuilderApp {
             this.isOrthographic = true;
             const ob = document.getElementById('ortho-toggle');
             if (ob) ob.classList.add('active');
-            this.showToast('Plan view (orthographic) — V toggles · scroll zoom', 'info');
+            this.showToast('Plan view (orthographic) ΓÇö V toggles ┬╖ scroll zoom', 'info');
         } else if (this._orthoState) {
             this.controls.object = this._perspCamera;
             this.camera = this._perspCamera;
@@ -1094,7 +919,7 @@ class BuilderApp {
                 this.orthoSize = 15;
                 this.updateOrthoFrustum();
                 this.controls.update();
-                this.showToast('Nothing to frame — plan view centered', 'info');
+                this.showToast('Nothing to frame ΓÇö plan view centered', 'info');
                 return;
             }
             const box = new THREE.Box3();
@@ -1140,7 +965,7 @@ class BuilderApp {
             navigator.clipboard
                 .writeText(text)
                 .then(() => this.showToast('Blueprint JSON copied to clipboard.', 'info'))
-                .catch(() => this.showToast('Clipboard failed — use Save JSON.', 'danger'));
+                .catch(() => this.showToast('Clipboard failed ΓÇö use Save JSON.', 'danger'));
         } else {
             this.showToast('Clipboard API unavailable.', 'danger');
         }
@@ -1198,8 +1023,8 @@ class BuilderApp {
         this._fpsTime = 0;
         const el = document.getElementById('stats-overlay');
         if (el) {
-            el.textContent = `FPS ${fps} · Parts ${this.objects.length}${
-                this.isOrthographic ? ' · Plan' : ''
+            el.textContent = `FPS ${fps} ┬╖ Parts ${this.objects.length}${
+                this.isOrthographic ? ' ┬╖ Plan' : ''
             }`;
         }
     }
@@ -1207,7 +1032,7 @@ class BuilderApp {
     updateSiteReadout(x, y, z) {
         const el = document.getElementById('site-readout');
         if (!el) return;
-        const snapHint = this.currentItem === 'pex' ? ' · PEX surface snap' : this._fineSnap ? ' · Alt: ¼ m' : ' · 1 m grid';
+        const snapHint = this.currentItem === 'pex' ? ' ┬╖ PEX surface snap' : this._fineSnap ? ' ┬╖ Alt: ┬╝ m' : ' ┬╖ 1 m grid';
         el.textContent = `X ${x.toFixed(2)}  Y ${y.toFixed(2)}  Z ${z.toFixed(2)}${snapHint}`;
     }
 
@@ -1225,7 +1050,7 @@ class BuilderApp {
                 new THREE.Vector3(0, 0, 0)
             ]);
         }
-        this.updateMeasureReadout('—');
+        this.updateMeasureReadout('ΓÇö');
     }
 
     setMeasureMode(on) {
@@ -1253,7 +1078,7 @@ class BuilderApp {
             this._measurePointCount = 1;
             this._measureLine.visible = true;
             this._measureLine.geometry.setFromPoints([this._measureA, this._measureA]);
-            this.updateMeasureReadout('A set — pick B');
+            this.updateMeasureReadout('A set ΓÇö pick B');
             return;
         }
         if (this._measurePointCount === 1) {
@@ -1274,13 +1099,14 @@ class BuilderApp {
         list.push(...this.objects);
         const hits = this.raycaster.intersectObjects(list, false);
         if (hits.length === 0) {
-            this.updateMeasureReadout('No hit — try again');
+            this.updateMeasureReadout('No hit ΓÇö try again');
             return;
         }
         this.onMeasurePoint(hits[0].point);
     }
+
     ghostOverlapsPlaced(ghost) {
-        if (this.currentItem === 'spray' || this.currentItem === 'paintbrush') return false;
+        if (this.currentItem === 'spray') return false;
         ghost.updateMatrixWorld(true);
         this._ghostBox.setFromObject(ghost).expandByScalar(-0.005);
         for (const o of this.objects) {
@@ -1324,7 +1150,6 @@ class BuilderApp {
         this.undoStack.push({ t: 'place', snap: this.meshToSnapshot(mesh) });
         this.lastPlacedSnap = this.meshToSnapshot(mesh);
         this.flashPlacedMesh(mesh);
-        this.triggerPlacementVfx(mesh.position, mesh.userData.material);
         this.scheduleDraftSave();
     }
 
@@ -1363,7 +1188,7 @@ class BuilderApp {
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         if (this.meshIntersectsPlaced(mesh)) {
-            this.showToast('Can\'t repeat — overlaps another part.', 'danger');
+            this.showToast('Can\'t repeat ΓÇö overlaps another part.', 'danger');
             return;
         }
         this._nextId += 1;
@@ -1382,7 +1207,7 @@ class BuilderApp {
         const list = document.getElementById('update-list');
         const verEl = document.getElementById('app-version-pill');
         if (titleEl) {
-            titleEl.textContent = `What’s new — v${APP_RELEASE.version}`;
+            titleEl.textContent = `WhatΓÇÖs new ΓÇö v${APP_RELEASE.version}`;
         }
         if (dateEl) {
             dateEl.textContent = APP_RELEASE.dateLabel;
@@ -1471,57 +1296,6 @@ class BuilderApp {
             case 'pot': return new THREE.CylinderGeometry(0.4, 0.25, 0.6, 16);
             case 'pex': return new THREE.CylinderGeometry(0.04, 0.04, 1, 12);
             case 'spray': return new THREE.SphereGeometry(0.05, 8, 8);
-            case 'fence_post': return new THREE.BoxGeometry(0.1, 1.2, 0.1);
-            case 'fence_rail': return new THREE.BoxGeometry(2, 0.07, 0.07);
-            case 'fence_panel': return new THREE.BoxGeometry(2, 0.9, 0.04);
-            case 'paintbrush': return new THREE.OctahedronGeometry(0.18);
-            case 'wedge': {
-                const vertices = new Float32Array([
-                    -0.5,-0.5,-0.5, -0.5,-0.5,0.5, 0.5,-0.5,0.5,
-                    -0.5,-0.5,-0.5, 0.5,-0.5,0.5, 0.5,-0.5,-0.5,
-                    0.5,-0.5,0.5, -0.5,-0.5,0.5, -0.5,0.5,0.5,
-                    0.5,-0.5,0.5, -0.5,0.5,0.5, 0.5,0.5,0.5,
-                    -0.5,-0.5,-0.5, 0.5,-0.5,-0.5, 0.5,0.5,0.5,
-                    -0.5,-0.5,-0.5, 0.5,0.5,0.5, -0.5,0.5,0.5,
-                    -0.5,-0.5,-0.5, -0.5,0.5,0.5, -0.5,-0.5,0.5,
-                    0.5,-0.5,-0.5, 0.5,-0.5,0.5, 0.5,0.5,0.5
-                ]);
-                const uvs = new Float32Array([
-                    0,0, 0,1, 1,1, 0,0, 1,1, 1,0,
-                    1,0, 0,0, 0,1, 1,0, 0,1, 1,1,
-                    0,0, 1,0, 1,1, 0,0, 1,1, 0,1,
-                    0,0, 1,1, 1,0, 0,0, 1,0, 1,1
-                ]);
-                const geo = new THREE.BufferGeometry();
-                geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-                geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-                geo.computeVertexNormals();
-                return geo;
-            }
-            case 'stairs': {
-                const group = new THREE.Group();
-                const geos = [
-                    new THREE.BoxGeometry(1, 0.25, 0.25).translate(0, -0.375, -0.375),
-                    new THREE.BoxGeometry(1, 0.50, 0.25).translate(0, -0.25, -0.125),
-                    new THREE.BoxGeometry(1, 0.75, 0.25).translate(0, -0.125, 0.125),
-                    new THREE.BoxGeometry(1, 1.00, 0.25).translate(0, 0, 0.375)
-                ];
-                const merged = new THREE.BufferGeometry();
-                const positions = [];
-                const normals = [];
-                const uvs = [];
-                geos.forEach((g) => {
-                    positions.push(...g.attributes.position.array);
-                    normals.push(...g.attributes.normal.array);
-                    uvs.push(...g.attributes.uv.array);
-                    g.dispose();
-                });
-                merged.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-                merged.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
-                merged.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
-                group.clear();
-                return merged;
-            }
             default: return new THREE.BoxGeometry(1, 1, 1);
         }
     }
@@ -1539,54 +1313,15 @@ class BuilderApp {
         return 1;
     }
 
-    trySnapFenceGhost(intersect) {
-        if (!FENCE_ITEMS.includes(this.currentItem)) return false;
-        const hit = intersect.object;
-        if (!hit || !hit.userData || hit.userData.item !== FENCE_POST) return false;
-        const n = intersect.face.normal.clone().transformDirection(hit.matrixWorld);
-        const axis = Math.abs(n.x) >= Math.abs(n.z) ? 'x' : 'z';
-        const sign = n[axis] >= 0 ? 1 : -1;
-        if (this.currentItem === FENCE_POST) {
-            this.ghostObject.position.copy(hit.position);
-            this.ghostObject.position[axis] += sign * 2;
-        } else {
-            this.ghostObject.position.copy(hit.position);
-            this.ghostObject.position[axis] += sign;
-            this.ghostObject.rotation.y = axis === 'x' ? 0 : Math.PI / 2;
-        }
-        const h = this.getMeshHeightForItem(this.currentItem, this.ghostObject.geometry);
-        const gy = this.getGroundYAt(this.ghostObject.position.x, this.ghostObject.position.z);
-        this.ghostObject.position.y = gy + h / 2 + 0.02;
-        return true;
-    }
-
     updateGhost() {
         if (this.fpMode) return;
         if (!this.ghostObject) return;
-        if (this.currentItem === 'paintbrush') {
-            const t = Date.now() * 0.006;
-            const s = 1 + Math.sin(t) * 0.15;
-            this.ghostObject.scale.set(s, s, s);
-            this.ghostObject.rotation.y += 0.02;
-        } else {
-            this.ghostObject.scale.set(1, 1, 1);
-        }
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const targets = [];
         if (this.innerPlane) targets.push(this.innerPlane);
         if (this.plane) targets.push(this.plane);
         targets.push(...this.objects);
         const intersects = this.raycaster.intersectObjects(targets);
-
-        if (intersects.length > 0 && this.currentItem === 'paintbrush') {
-            const intersect = intersects[0];
-            this.ghostObject.position.copy(intersect.point);
-            this.ghostObject.visible = true;
-            const gmat = this.ghostObject.material;
-            if (gmat && gmat.color) gmat.color.setHex(0x00ffff);
-            this.updateSiteReadout(intersect.point.x, intersect.point.y, intersect.point.z);
-            return;
-        }
 
         if (intersects.length > 0) {
             const intersect = intersects[0];
@@ -1595,19 +1330,6 @@ class BuilderApp {
                 .add(intersect.face.normal.clone().multiplyScalar(0.5));
             const isHitStackable = intersect.object && intersect.object.userData && ['pipe', 'column', 'pex', 'spray'].includes(intersect.object.userData.item);
             const isCurrentStackable = ['pipe', 'column', 'pex', 'spray'].includes(this.currentItem);
-
-            if (this.trySnapFenceGhost(intersect)) {
-                this.ghostObject.visible = true;
-                this.updateSiteReadout(
-                    this.ghostObject.position.x,
-                    this.ghostObject.position.y,
-                    this.ghostObject.position.z
-                );
-                const blocked = this.ghostOverlapsPlaced(this.ghostObject);
-                const gmat = this.ghostObject.material;
-                if (gmat && gmat.color) gmat.color.setHex(blocked ? 0xff3355 : 0x00f2ff);
-                return;
-            }
 
             if (isCurrentStackable && isHitStackable && intersect.face.normal.y > -0.5) {
                 // Snap Lock: Snap to the top of the hit object
@@ -1634,9 +1356,8 @@ class BuilderApp {
                 const geom = this.ghostObject.geometry;
                 const h = this.getMeshHeightForItem(this.currentItem, geom);
                 this.ghostObject.position.y = Math.max(h / 2, pos.y);
-                if (['column', 'pipe', 'pot', FENCE_POST].includes(this.currentItem)) {
-                    const gy = this.getGroundYAt(this.ghostObject.position.x, this.ghostObject.position.z);
-                    this.ghostObject.position.y = gy + h / 2 + 0.02;
+                if (['column', 'pipe', 'pot'].includes(this.currentItem)) {
+                    this.ghostObject.position.y = h / 2 + Math.floor(pos.y * g) / g;
                 } else if (this.currentItem === 'beam' || this.currentItem === 'slab') {
                     const gy = this._fineSnap ? Math.round(pos.y * 40) / 40 : Math.round(pos.y * 10) / 10;
                     this.ghostObject.position.y = gy;
@@ -1668,8 +1389,8 @@ class BuilderApp {
             this.ghostObject.visible = false;
             const sr = document.getElementById('site-readout');
             if (sr) {
-                const snapHint = this.currentItem === 'pex' ? ' · PEX surface snap' : this._fineSnap ? ' · Alt: ¼ m' : ' · 1 m grid';
-                sr.textContent = `Cursor —${snapHint}`;
+                const snapHint = this.currentItem === 'pex' ? ' ┬╖ PEX surface snap' : this._fineSnap ? ' ┬╖ Alt: ┬╝ m' : ' ┬╖ 1 m grid';
+                sr.textContent = `Cursor ΓÇö${snapHint}`;
             }
             const gmat = this.ghostObject.material;
             if (gmat && gmat.color) {
@@ -1800,14 +1521,6 @@ class BuilderApp {
                 this.objects.push(mesh);
                 this.updateTakeoff();
                 this.redoStack.push(op);
-            } else if (op.t === 'paint_object') {
-                const mesh = this.findMeshById(op.snapBefore.id);
-                if (mesh) {
-                    mesh.userData.material = op.snapBefore.material;
-                    mesh.material = this.buildStandardMaterial(op.snapBefore.material);
-                    this.updateTakeoff();
-                }
-                this.redoStack.push(op);
             } else if (op.t === 'clear') {
                 for (const s of op.snaps) {
                     const m = this.createMeshFromSnapshot(s);
@@ -1845,14 +1558,6 @@ class BuilderApp {
             } else if (op.t === 'remove') {
                 this.removeMeshById(op.snap.id);
                 this.undoStack.push(op);
-            } else if (op.t === 'paint_object') {
-                const mesh = this.findMeshById(op.snapAfter.id);
-                if (mesh) {
-                    mesh.userData.material = op.snapAfter.material;
-                    mesh.material = this.buildStandardMaterial(op.snapAfter.material);
-                    this.updateTakeoff();
-                }
-                this.undoStack.push(op);
             } else if (op.t === 'clear') {
                 this.purgeAllMeshes();
                 this.undoStack.push(op);
@@ -1876,30 +1581,10 @@ class BuilderApp {
     placeObject() {
         if (this.fpMode) return;
         if (this.measureMode) return;
-        if (this._inHistory) return;
-        if (this.currentItem === 'paintbrush') {
-            this.raycaster.setFromCamera(this.mouse, this.camera);
-            const hits = this.raycaster.intersectObjects(this.objects);
-            if (hits.length === 0) return;
-            const obj = hits[0].object;
-            const oldMaterial = obj.userData.material;
-            const newMaterial = this.currentMaterial;
-            if (oldMaterial === newMaterial) return;
-            const snapBefore = this.meshToSnapshot(obj);
-            obj.userData.material = newMaterial;
-            obj.material = this.buildStandardMaterial(newMaterial);
-            const snapAfter = this.meshToSnapshot(obj);
-            this.redoStack = [];
-            this.undoStack.push({ t: 'paint_object', snapBefore, snapAfter });
-            this.updateTakeoff();
-            this.scheduleDraftSave();
-            this.triggerPlacementVfx(obj.position, newMaterial);
-            this.showToast(`Painted part with ${newMaterial}`, 'info');
-            return;
-        }
         if (!this.ghostObject.visible) return;
+        if (this._inHistory) return;
         if (this.ghostOverlapsPlaced(this.ghostObject)) {
-            this.showToast('Can\'t place — overlaps another part.', 'danger');
+            this.showToast('Can\'t place ΓÇö overlaps another part.', 'danger');
             return;
         }
         const id = this._nextId++;
@@ -1939,56 +1624,6 @@ class BuilderApp {
         this.showToast('Part removed.', 'info');
     }
 
-    triggerEyedropper() {
-        if (this.fpMode) return;
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        const hits = this.raycaster.intersectObjects(this.objects);
-        if (hits.length === 0) return;
-        const obj = hits[0].object;
-        if (obj && obj.userData) {
-            if (obj.userData.item) this.setActiveItem(obj.userData.item);
-            if (obj.userData.material) this.setActiveMaterial(obj.userData.material);
-            this.showToast(`Eyedropped: ${obj.userData.item} (${obj.userData.material})`, 'info');
-        }
-    }
-
-    cloneHoveredObject() {
-        if (this.fpMode || this.measureMode || this._inHistory) return;
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        const hits = this.raycaster.intersectObjects(this.objects);
-        if (hits.length === 0) {
-            this.showToast('Hover a part to clone it.', 'info');
-            return;
-        }
-        const hit = hits[0];
-        const source = hit.object;
-        const snap = this.meshToSnapshot(source);
-        const normal = hit.face.normal.clone().transformDirection(source.matrixWorld);
-        const axis = Math.abs(normal.x) > Math.abs(normal.y) && Math.abs(normal.x) > Math.abs(normal.z)
-            ? 'x'
-            : Math.abs(normal.y) > Math.abs(normal.z)
-                ? 'y'
-                : 'z';
-        const offset = new THREE.Vector3();
-        offset[axis] = normal[axis] >= 0 ? 1 : -1;
-        snap.id = this._nextId++;
-        snap.position = [
-            snap.position[0] + offset.x,
-            Math.max(0.05, snap.position[1] + offset.y),
-            snap.position[2] + offset.z
-        ];
-        const mesh = this.createMeshFromSnapshot(snap);
-        if (this.meshIntersectsPlaced(mesh)) {
-            this._nextId -= 1;
-            mesh.geometry.dispose();
-            if (mesh.material && typeof mesh.material.dispose === 'function') mesh.material.dispose();
-            this.showToast('Clone blocked — target space is occupied.', 'danger');
-            return;
-        }
-        this.commitPlacedMesh(mesh);
-        this.showToast(`Cloned ${snap.item}.`, 'info');
-    }
-
     clearSceneConfirmed() {
         if (this._inHistory) return;
         const ok = window.confirm(
@@ -2019,7 +1654,7 @@ class BuilderApp {
             byItem.set(it, (byItem.get(it) || 0) + 1);
             byMat.set(m, (byMat.get(m) || 0) + 1);
         }
-        let text = '—';
+        let text = 'ΓÇö';
         if (this.objects.length > 0) {
             const lines = [
                 `Total: ${this.objects.length}`,
@@ -2104,50 +1739,15 @@ class BuilderApp {
             navigator.clipboard
                 .writeText(tsv)
                 .then(() => this.showToast('Takeoff copied to clipboard (TSV).', 'info'))
-                .catch(() => this.showToast('Clipboard failed — see console.', 'danger'));
+                .catch(() => this.showToast('Clipboard failed ΓÇö see console.', 'danger'));
         } else {
             this.showToast('Clipboard API unavailable.', 'danger');
         }
     }
 
-    buildBlueprintPayload() {
-        return {
-            v: BLUEPRINT_VERSION,
-            site: {
-                outerMaterial: this.siteGround.outer,
-                innerMaterial: this.siteGround.inner
-            },
-            parts: this.objects.map((o) => this.meshToSnapshot(o))
-        };
-    }
-
-    applyGroundMaterials(outerKey, innerKey) {
-        const outer = MATERIAL_KEYS.includes(outerKey) ? outerKey : 'concrete';
-        const inner = MATERIAL_KEYS.includes(innerKey) ? innerKey : outer;
-        const makeGroundMaterial = (key, repeat) => {
-            const mat = this.buildStandardMaterial(key);
-            if (mat.map) {
-                mat.map = mat.map.clone();
-                mat.map.wrapS = mat.map.wrapT = THREE.RepeatWrapping;
-                mat.map.repeat.set(repeat, repeat);
-                mat.map.needsUpdate = true;
-            }
-            return mat;
-        };
-        this.siteGround.outer = outer;
-        this.siteGround.inner = inner;
-        if (this.plane) this.plane.material = makeGroundMaterial(outer, 18);
-        if (this.innerPlane) this.innerPlane.material = makeGroundMaterial(inner, 5);
-    }
-
-    applySiteFromBlueprint(data) {
-        const site = data && data.site ? data.site : null;
-        if (!site) return;
-        this.applyGroundMaterials(site.outerMaterial, site.innerMaterial);
-    }
-
     exportBlueprint() {
-        const payload = this.buildBlueprintPayload();
+        const parts = this.objects.map((o) => this.meshToSnapshot(o));
+        const payload = { v: BLUEPRINT_VERSION, parts };
         const blob = new Blob([JSON.stringify(payload, null, 2)], {
             type: 'application/json'
         });
@@ -2174,7 +1774,6 @@ class BuilderApp {
         this.purgeAllMeshes();
         this.undoStack = [];
         this.redoStack = [];
-        this.applySiteFromBlueprint(data);
         let maxId = 0;
         for (const s of data.parts) {
             if (!s || !s.item || !s.material || !s.position) continue;
@@ -2211,21 +1810,14 @@ class BuilderApp {
         document.querySelectorAll('[data-material]').forEach((b) => {
             b.classList.toggle('active', b.dataset.material === key);
         });
-        this.scrollSidebarToSelection('[data-material]');
     }
 
     setActiveItem(key) {
         this.currentItem = key;
-        const fenceIdx = FENCE_ITEMS.indexOf(key);
-        if (fenceIdx >= 0) this._fenceCycleIdx = fenceIdx;
-        if (key.startsWith('fence_') && !WOOD_MATERIALS.includes(this.currentMaterial)) {
-            this.setActiveMaterial('wood');
-        }
         document.querySelectorAll('[data-item]').forEach((b) => {
             b.classList.toggle('active', b.dataset.item === key);
         });
         this.createGhost();
-        this.scrollSidebarToSelection('[data-item]');
     }
 
     cycleMaterial() {
@@ -2234,291 +1826,19 @@ class BuilderApp {
         this.setActiveMaterial(next);
     }
 
-    ensureSidebarSectionVisible(optionBtn) {
-        if (!optionBtn) return;
-        const section = optionBtn.closest('.tool-section');
-        const toggle = section?.querySelector('.section-toggle');
-        const body = toggle?.nextElementSibling;
-        if (toggle?.classList.contains('collapsed')) {
-            toggle.classList.remove('collapsed');
-            if (body?.classList.contains('section-body')) body.classList.remove('collapsed');
-        }
-    }
-
-    scrollSidebarToSelection(attrSelector) {
-        if (this.sidebarCollapsed) return;
-        const el = attrSelector
-            ? document.querySelector(`#sidebar .option-btn.active${attrSelector}`)
-            : document.querySelector('#sidebar .option-btn.active');
-        if (!el) return;
-        this.ensureSidebarSectionVisible(el);
-        const motion = this.reducedMotion ? 'auto' : 'smooth';
-        el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: motion });
-    }
-
-    setAllToolSectionsCollapsed(collapsed) {
-        document.querySelectorAll('.section-toggle').forEach((btn) => {
-            btn.classList.toggle('collapsed', collapsed);
-            const body = btn.nextElementSibling;
-            if (body && body.classList.contains('section-body')) {
-                body.classList.toggle('collapsed', collapsed);
-            }
-        });
-    }
-
-    setSidebarWidthPx(px) {
-        const min = 260;
-        const max = 480;
-        const w = Math.round(Math.max(min, Math.min(max, px)));
-        document.documentElement.style.setProperty('--sidebar-width', `${w}px`);
-        document.documentElement.style.setProperty('--sidebar-slot-width', `${w}px`);
-        return w;
-    }
-
-    setSidebarCollapsed(collapsed, silent = false) {
-        this.sidebarCollapsed = collapsed;
-        document.body.classList.toggle('sidebar-collapsed', collapsed);
-        const collapseBtn = document.getElementById('sidebar-collapse-btn');
-        const expandTab = document.getElementById('sidebar-expand-tab');
-        if (collapseBtn) {
-            collapseBtn.setAttribute('aria-expanded', String(!collapsed));
-        }
-        if (expandTab) {
-            expandTab.hidden = !collapsed;
-        }
-        if (!collapsed) {
-            document.documentElement.style.setProperty(
-                '--sidebar-slot-width',
-                getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim() || '360px'
-            );
-        }
-        try {
-            localStorage.setItem('builder3d-sidebar-collapsed', collapsed ? '1' : '0');
-        } catch (e) {
-            /* storage disabled */
-        }
-        if (!silent) {
-            this.showToast(collapsed ? 'Tools panel hidden â€” B or â€º to open' : 'Tools panel open', 'info');
-        }
-    }
-
-    toggleSidebarCollapsed() {
-        this.setSidebarCollapsed(!this.sidebarCollapsed);
-    }
-
-    initSidebarChrome() {
-        const WIDTH_KEY = 'builder3d-sidebar-width';
-        const DEFAULT_W = 360;
-        const collapseBtn = document.getElementById('sidebar-collapse-btn');
-        const expandTab = document.getElementById('sidebar-expand-tab');
-        const resizer = document.getElementById('sidebar-resizer');
-        const expandAll = document.getElementById('sections-expand-all');
-        const collapseAll = document.getElementById('sections-collapse-all');
-
-        try {
-            const raw = localStorage.getItem(WIDTH_KEY);
-            if (raw) {
-                const n = parseInt(raw, 10);
-                if (Number.isFinite(n)) this.setSidebarWidthPx(n);
-            }
-            if (localStorage.getItem('builder3d-sidebar-collapsed') === '1') {
-                this.setSidebarCollapsed(true, true);
-            }
-        } catch (e) {
-            /* ignore */
-        }
-
-        collapseBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.setSidebarCollapsed(true);
-        });
-        expandTab?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.setSidebarCollapsed(false);
-            expandTab.blur();
-        });
-
-        expandAll?.addEventListener('click', () => {
-            this.setAllToolSectionsCollapsed(false);
-            this.showToast('All sections expanded', 'info');
-        });
-        collapseAll?.addEventListener('click', () => {
-            this.setAllToolSectionsCollapsed(true);
-            this.showToast('All sections collapsed', 'info');
-        });
-
-        if (resizer) {
-            const onMove = (e) => {
-                if (!this._sidebarResizeActive || this.sidebarCollapsed) return;
-                const w = this.setSidebarWidthPx(e.clientX);
-                try {
-                    localStorage.setItem(WIDTH_KEY, String(w));
-                } catch (err) {
-                    /* ignore */
-                }
-            };
-            const endResize = () => {
-                if (!this._sidebarResizeActive) return;
-                this._sidebarResizeActive = false;
-                document.body.classList.remove('sidebar-resizing');
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', endResize);
-            };
-            resizer.addEventListener('mousedown', (e) => {
-                if (this.sidebarCollapsed) return;
-                e.preventDefault();
-                this._sidebarResizeActive = true;
-                document.body.classList.add('sidebar-resizing');
-                document.addEventListener('mousemove', onMove);
-                document.addEventListener('mouseup', endResize);
-            });
-            resizer.addEventListener('dblclick', (e) => {
-                e.preventDefault();
-                const w = this.setSidebarWidthPx(DEFAULT_W);
-                try {
-                    localStorage.setItem(WIDTH_KEY, String(w));
-                } catch (err) {
-                    /* ignore */
-                }
-                this.showToast('Panel width reset', 'info');
-            });
-        }
-    }
-
     paintOuterGround() {
         if (!this.plane) return;
-        this.siteGround.outer = this.currentMaterial;
         this.plane.material = this.buildStandardMaterial(this.currentMaterial);
-        this.scheduleDraftSave();
         this.showToast(`Outer ground painted with ${this.currentMaterial}`, 'info');
     }
 
     paintInnerGround() {
         if (!this.innerPlane) return;
-        this.siteGround.inner = this.currentMaterial;
         this.innerPlane.material = this.buildStandardMaterial(this.currentMaterial);
-        this.scheduleDraftSave();
         this.showToast(`Build zone painted with ${this.currentMaterial}`, 'info');
     }
 
-    paintBothGround() {
-        this.applyGroundMaterials(this.currentMaterial, this.currentMaterial);
-        this.scheduleDraftSave();
-        this.showToast(`Both grounds painted with ${this.currentMaterial}`, 'info');
-    }
-
-    applyGrassyYardPreset() {
-        this.applyGroundMaterials('grass', 'grass');
-        this.setActiveMaterial('grass');
-        this.applyLightingPreset('dusk');
-        this.scheduleDraftSave();
-        this.showToast('Grassy yard: grass site + warm dusk lighting', 'info');
-    }
-
-    cycleFenceItem() {
-        this._fenceCycleIdx = (this._fenceCycleIdx + 1) % FENCE_ITEMS.length;
-        this.setActiveItem(FENCE_ITEMS[this._fenceCycleIdx]);
-    }
-
-    placeNextFencePost() {
-        const posts = this.objects.filter((o) => o.userData.item === FENCE_POST);
-        if (posts.length === 0) {
-            this.setActiveItem(FENCE_POST);
-            this.showToast('Place a fence post first.', 'info');
-            return;
-        }
-        const last = posts[posts.length - 1];
-        const snap = this.meshToSnapshot(last);
-        snap.id = this._nextId++;
-        snap.position = [last.position.x + 2, last.position.y, last.position.z];
-        const mesh = this.createMeshFromSnapshot(snap);
-        if (this.meshIntersectsPlaced(mesh)) {
-            this._nextId -= 1;
-            this.showToast('Next fence post blocked.', 'danger');
-            return;
-        }
-        this.commitPlacedMesh(mesh);
-        this.showToast('Next fence post placed.', 'info');
-    }
-
-    /** Sidebar/header tooltips â€” faster than native `title` (~1s OS delay). */
-    initFastTooltips() {
-        const TOOLTIP_DELAY_MS = 200;
-        const roots = [
-            document.getElementById('sidebar')
-        ].filter(Boolean);
-        if (!roots.length) return;
-
-        let tip = document.getElementById('fast-tooltip');
-        if (!tip) {
-            tip = document.createElement('div');
-            tip.id = 'fast-tooltip';
-            tip.className = 'fast-tooltip';
-            tip.setAttribute('role', 'tooltip');
-            tip.hidden = true;
-            document.body.appendChild(tip);
-        }
-
-        let showTimer = null;
-        let anchor = null;
-
-        const hide = () => {
-            clearTimeout(showTimer);
-            showTimer = null;
-            anchor = null;
-            tip.hidden = true;
-        };
-
-        const position = (target) => {
-            const r = target.getBoundingClientRect();
-            tip.style.left = `${Math.round(r.right + 10)}px`;
-            tip.style.top = `${Math.round(r.top + r.height / 2)}px`;
-        };
-
-        const showNow = (target, text) => {
-            tip.textContent = text;
-            position(target);
-            tip.hidden = false;
-            anchor = target;
-        };
-
-        const bindNode = (node) => {
-            const text = node.getAttribute('title');
-            if (!text || node.dataset.fastTipBound === '1') return;
-            node.dataset.fastTipBound = '1';
-            node.setAttribute('aria-label', text);
-            node.removeAttribute('title');
-
-            node.addEventListener('mouseenter', () => {
-                clearTimeout(showTimer);
-                showTimer = setTimeout(() => showNow(node, text), TOOLTIP_DELAY_MS);
-            });
-            node.addEventListener('mouseleave', hide);
-            node.addEventListener('focus', () => {
-                clearTimeout(showTimer);
-                showNow(node, text);
-            });
-            node.addEventListener('blur', hide);
-        };
-
-        roots.forEach((root) => {
-            root.querySelectorAll('[title]').forEach(bindNode);
-        });
-
-        const scroll = document.getElementById('toolbar-scroll');
-        if (scroll) {
-            scroll.addEventListener('scroll', () => {
-                if (!tip.hidden && anchor) position(anchor);
-            });
-        }
-        window.addEventListener('resize', () => {
-            if (!tip.hidden && anchor) position(anchor);
-        });
-    }
-
     bindEvents() {
-        this.initSidebarChrome();
-        this.initFastTooltips();
         window.addEventListener('resize', () => this.onResize());
 
         window.addEventListener(
@@ -2634,12 +1954,6 @@ class BuilderApp {
                 this.applyLightingPreset(lightingSel.value);
             });
         }
-        const sunSlider = document.getElementById('sun-angle-slider');
-        if (sunSlider) {
-            sunSlider.addEventListener('input', () => {
-                this.updateSunPosition(parseFloat(sunSlider.value));
-            });
-        }
         const helpBtn = document.getElementById('help-btn');
         const helpClose = document.getElementById('help-close');
         const helpBackdrop = document.getElementById('help-backdrop');
@@ -2659,16 +1973,11 @@ class BuilderApp {
         }
 
         window.addEventListener('mousedown', (e) => {
-            if (e.target.closest('#sidebar')) return;
+            if (e.target.closest('#toolbar')) return;
             if (this.fpMode) return;
             if (this.measureMode && e.button === 0) {
                 e.preventDefault();
                 this.onMeasureClickFromEvent();
-                return;
-            }
-            if (e.button === 1) {
-                e.preventDefault();
-                this.triggerEyedropper();
                 return;
             }
             if (e.button === 0) {
@@ -2706,14 +2015,6 @@ class BuilderApp {
         const paintInnerBtn = document.getElementById('paint-inner-btn');
         if (paintInnerBtn) {
             paintInnerBtn.addEventListener('click', () => this.paintInnerGround());
-        }
-        const paintBothBtn = document.getElementById('paint-both-btn');
-        if (paintBothBtn) {
-            paintBothBtn.addEventListener('click', () => this.paintBothGround());
-        }
-        const grassyYardBtn = document.getElementById('grassy-yard-btn');
-        if (grassyYardBtn) {
-            grassyYardBtn.addEventListener('click', () => this.applyGrassyYardPreset());
         }
 
         const clearBtn = document.getElementById('clear-btn');
@@ -2785,12 +2086,6 @@ class BuilderApp {
         window.addEventListener('keydown', (e) => {
             if (this.shouldIgnoreKeyboard()) return;
             const mod = e.ctrlKey || e.metaKey;
-            if (e.key.toLowerCase() === 'i' && !mod) {
-                if (this.fpMode) return;
-                e.preventDefault();
-                this.triggerEyedropper();
-                return;
-            }
             if (e.key === 'Escape') {
                 if (this.fpMode) {
                     e.preventDefault();
@@ -2864,12 +2159,6 @@ class BuilderApp {
                 this.repeatLastPlacement();
                 return;
             }
-            if (e.key.toLowerCase() === 'c' && !mod) {
-                if (this.fpMode) return;
-                e.preventDefault();
-                this.cloneHoveredObject();
-                return;
-            }
             if (e.key.toLowerCase() === 'l' && !mod) {
                 if (this.fpMode) return;
                 e.preventDefault();
@@ -2893,46 +2182,6 @@ class BuilderApp {
             if (e.key.toLowerCase() === 'm' && !mod) {
                 e.preventDefault();
                 this.cycleMaterial();
-            }
-            if (e.key.toLowerCase() === 'h' && !mod) {
-                if (this.fpMode) return;
-                e.preventDefault();
-                this.paintBothGround();
-                return;
-            }
-            if (e.key.toLowerCase() === 'b' && !mod) {
-                e.preventDefault();
-                this.toggleSidebarCollapsed();
-                return;
-            }
-            if (e.key.toLowerCase() === 'u' && !mod) {
-                if (this.fpMode) return;
-                e.preventDefault();
-                this.applyGrassyYardPreset();
-                return;
-            }
-            if (e.key.toLowerCase() === 'n' && !mod) {
-                if (this.fpMode) return;
-                e.preventDefault();
-                this.placeNextFencePost();
-                return;
-            }
-            if (e.key === ']' && !mod) {
-                if (this.fpMode) return;
-                e.preventDefault();
-                this.cycleFenceItem();
-                return;
-            }
-            if (e.key.toLowerCase() === 'q' && !mod) {
-                if (this.fpMode) return;
-                e.preventDefault();
-                const step = -Math.PI / 2;
-                if (this.currentAxis === 'x') this.ghostRotation.x += step;
-                else if (this.currentAxis === 'y') this.ghostRotation.y += step;
-                else if (this.currentAxis === 'z') this.ghostRotation.z += step;
-                if (this.ghostObject) this.ghostObject.rotation.copy(this.ghostRotation);
-                this.showToast(`Rotated âˆ’${this.currentAxis.toUpperCase()}`, 'info');
-                return;
             }
             if (e.key.toLowerCase() === 'r' && !mod) {
                 if (this.fpMode) return;
@@ -2964,12 +2213,6 @@ class BuilderApp {
                 e.preventDefault();
                 const idx = parseInt(e.key, 10) - 1;
                 if (ITEM_TYPES[idx]) this.setActiveItem(ITEM_TYPES[idx]);
-                return;
-            }
-            if (e.key === '0' && !mod) {
-                if (this.fpMode) return;
-                e.preventDefault();
-                if (ITEM_TYPES[9]) this.setActiveItem(ITEM_TYPES[9]);
             }
         });
     }
@@ -3015,54 +2258,6 @@ class BuilderApp {
         }
     }
 
-    getMaterialVfxColor(materialKey) {
-        if (!materialKey) return 0x00f2ff;
-        const key = materialKey.toLowerCase();
-        if (key.includes('wood') || key === 'mahogany') return 0x8b5a2b;
-        if (key.includes('concrete') || key === 'asphalt' || key === 'slate' || key === 'granite' || key === 'steel' || key === 'black_iron') return 0x7f8c8d;
-        if (key === 'marble') return 0xe0e0e0;
-        if (key === 'cobblestone') return 0x95a5a6;
-        if (key === 'brick' || key === 'terracotta' || key === 'sandstone') return 0xd35400;
-        if (key === 'glass') return 0xffffff;
-        if (key.includes('water') || key.includes('blue') || key === 'pex') return 0x00f2ff;
-        if (key === 'grass') return 0x27ae60;
-        return 0x00f2ff;
-    }
-
-    triggerPlacementVfx(position, materialKey) {
-        if (this.reducedMotion) return;
-        const color = this.getMaterialVfxColor(materialKey);
-        const count = 12 + Math.floor(Math.random() * 6);
-        for (let i = 0; i < count; i++) {
-            let p;
-            if (this._particlePool.length > 0) {
-                p = this._particlePool.pop();
-                p.mesh.material.color.setHex(color);
-            } else {
-                const geom = new THREE.SphereGeometry(0.04, 4, 4);
-                const mat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.8 });
-                p = { mesh: new THREE.Mesh(geom, mat) };
-            }
-            
-            p.mesh.position.copy(position);
-            
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos((Math.random() * 2) - 1);
-            const speed = 1.0 + Math.random() * 2.5;
-            p.vel = new THREE.Vector3(
-                Math.sin(phi) * Math.cos(theta) * speed,
-                Math.sin(phi) * Math.sin(theta) * speed + 1.0,
-                Math.cos(phi) * speed
-            );
-            
-            p.maxLife = 0.4 + Math.random() * 0.4;
-            p.life = p.maxLife;
-            
-            this.scene.add(p.mesh);
-            this.particles.push(p);
-        }
-    }
-
     spawnWaterParticle(source) {
         let p;
         if (this._particlePool.length > 0) {
@@ -3090,7 +2285,7 @@ class BuilderApp {
         this.particles.push(p);
     }
 
-    // â”€â”€ Cloud / Backend methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ΓöÇΓöÇ Cloud / Backend methods ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     async checkBackend() {
         try {
@@ -3106,7 +2301,7 @@ class BuilderApp {
         const section = document.getElementById('cloud-section');
         if (!section) return;
         section.style.opacity = this._backendAvailable ? '1' : '0.45';
-        section.title = this._backendAvailable ? '' : 'Backend server not running â€” start launch.bat';
+        section.title = this._backendAvailable ? '' : 'Backend server not running ΓÇö start launch.bat';
     }
 
     captureScreenshot() {
@@ -3121,11 +2316,11 @@ class BuilderApp {
     // Open the Cloud Save modal
     async openCloudSave() {
         if (!this._backendAvailable) {
-            this.showToast('Backend not running â€” start launch.bat first.', 'danger');
+            this.showToast('Backend not running ΓÇö start launch.bat first.', 'danger');
             return;
         }
         if (this.objects.length === 0) {
-            this.showToast('Nothing to save â€” place some parts first.', 'info');
+            this.showToast('Nothing to save ΓÇö place some parts first.', 'info');
             return;
         }
         try {
@@ -3152,7 +2347,8 @@ class BuilderApp {
         if (!name) { this.showToast('Enter a blueprint name.', 'danger'); return; }
         if (!projectId) { this.showToast('Select a project.', 'danger'); return; }
 
-        const payload = this.buildBlueprintPayload();
+        const parts = this.objects.map(o => this.meshToSnapshot(o));
+        const payload = { v: BLUEPRINT_VERSION, parts };
         const thumbnail = this.captureScreenshot();
 
         try {
@@ -3193,7 +2389,7 @@ class BuilderApp {
     // Open the Cloud Gallery / Load modal
     async openCloudGallery() {
         if (!this._backendAvailable) {
-            this.showToast('Backend not running â€” start launch.bat first.', 'danger');
+            this.showToast('Backend not running ΓÇö start launch.bat first.', 'danger');
             return;
         }
         try {
@@ -3220,7 +2416,7 @@ class BuilderApp {
                 }
                 <div class="gallery-info">
                     <span class="gallery-name">${bp.name}</span>
-                    <span class="gallery-meta">${bp.project_name} Â· ${bp.part_count} parts Â· v${bp.version}</span>
+                    <span class="gallery-meta">${bp.project_name} ┬╖ ${bp.part_count} parts ┬╖ v${bp.version}</span>
                 </div>
             </div>
         `).join('');

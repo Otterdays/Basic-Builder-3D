@@ -1,6 +1,29 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # CHANGELOG
 
+## [1.1.0] - 2026-05-21
+### Added
+- **Premium builder tools**: real-time shadows, sun position slider, paintbrush material edits, eyedropper (`I` / middle-click), placement dust VFX, roof wedge, and stair geometry.
+- **Atmosphere depth pass**: gradient sky, distant terrain silhouettes, horizon haze, hemisphere fill light, warmer daylight, and softer fog so the scene no longer reads like a black lunar void.
+- **Clone hovered part**: press **`C`** while hovering a placed piece to duplicate it one grid step outward; clone operations use normal undo/redo, takeoff, draft save, and placement VFX.
+- **Tools panel (`#sidebar`)**: full-height left dock (top–bottom), larger 4-column material/item tiles, renamed sections (**Materials & site**, **Pieces to place**), `#viewport-chrome` for bottom shortcut hints.
+- **Collapsible / resizable panel**: **`B`** or **‹** hides panel; **› Tools** tab reopens; drag right edge to resize (260–480px, persisted); double-click resizer resets width; state in **`builder3d-sidebar-collapsed`** / **`builder3d-sidebar-width`**.
+- **Panel QoL**: fast tooltips (`initFastTooltips`, ~200ms); **Expand all** / **Collapse all** footer; scroll-to-active tile on pick; auto-expand folded section when selecting material/item; `:focus-visible` on controls.
+### Changed
+- Placement clicks ignore **`#sidebar`** (was `#toolbar` only); walk crosshair and stats overlay track **`--sidebar-slot-width`** when panel hidden or resized.
+
+## [1.0.3] - 2026-05-21
+### Documentation
+- **`AGENTS.md`** (repo root) and **`DOCS/RULES_AGENTS.md`** — agent onboarding, hard rules, release/blueprint checklists; expanded **`.cursor/rules/builder-3d-project.mdc`**.
+
+### Added
+- **Grassy yard preset**: Toolbar + **`U`** — grass on outer and inner ground, selects grass material, switches lighting to dusk.
+- **Fence kit**: `fence_post`, `fence_rail`, `fence_panel` items (wood by default); snap rails/panels to posts; chain posts on side click (+2 m); **`N`** places next post along the row.
+- **Ground QoL**: **Paint Both** button + **`H`**; blueprint **v3** stores `site.outerMaterial` / `site.innerMaterial` (draft, save, load, cloud).
+### Changed
+- **`0`** selects item 10 (spray); fence pieces in Items toolbar.
+- **`Q`** counter-rotates ghost; **`]`** cycles fence piece types.
+
 ## [1.0.1] - 2026-04-27
 ### Added
 - **Update modal**: “What’s new” dialog on new versions (`APP_RELEASE` in `main.js`); dismiss persists **`builder3d-seen-release`** in `localStorage`. Toolbar **What’s new** reopens notes; **Esc** / **Got it** / backdrop close dismiss and record seen version.

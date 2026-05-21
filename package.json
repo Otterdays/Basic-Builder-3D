@@ -1,6 +1,6 @@
 {
   "name": "builder-3d",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "3D Construction Builder Scene",
   "main": "server/index.js",
   "scripts": {
