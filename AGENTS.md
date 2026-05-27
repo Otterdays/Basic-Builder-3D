@@ -2,15 +2,31 @@
 
 **Read this first.** This repo is a vanilla JS + Three.js 3D builder. Most logic lives in one file (`main.js`). Follow these rules so you do not break releases, docs, or blueprints.
 
+**New agents:** Start here — not `DOCS/SUMMARY.md`, not `SCRATCHPAD`, not a subfolder rule file alone. Other rule docs are summaries or extensions of this file.
+
+---
+
+## For AI agents (entry point)
+
+| Layer | File | Role |
+|-------|------|------|
+| **Canonical** | **`AGENTS.md`** (this file) | Full playbook — read every session |
+| Always-on (Cursor) | `.cursor/rules/builder-3d-project.mdc` | Short summary; defers here |
+| Doc workflow | `DOCS/RULES_AGENTS.md` | Preservation + post-task doc updates |
+| Releases | `DOCS/RULES_RELEASES.md` | Ship checklist detail |
+
+**Keep in sync:** If you change agent onboarding, hard rules, shortcuts, or release workflow in any rule file above, **update this `AGENTS.md` in the same task** so the next agent still lands here first.
+
 ---
 
 ## Quick start (every task)
 
-1. **Read status docs** (in order): `DOCS/SUMMARY.md` → `DOCS/SCRATCHPAD.md` → `DOCS/SBOM.md` (if touching deps) → `DOCS/STYLE_GUIDE.md`.
-2. **Read code you will change** — never assume APIs exist; grep `main.js` first.
-3. **Match existing patterns** in `main.js`, `index.html`, `style.css`.
-4. **Update docs when you ship** — see [Documentation](#documentation-mandatory-rules) below.
-5. **Do not commit or push** unless the user explicitly asks.
+1. **Read this file** (`AGENTS.md`) — at least **Hard rules**, **Release & version**, **Blueprint format**, and **Code map** (skip only if you already read them this session and nothing changed).
+2. **Read status docs** (in order): `DOCS/SUMMARY.md` → `DOCS/SCRATCHPAD.md` → `DOCS/SBOM.md` (if touching deps) → `DOCS/STYLE_GUIDE.md`.
+3. **Read code you will change** — never assume APIs exist; grep `main.js` first.
+4. **Match existing patterns** in `main.js`, `index.html`, `style.css`.
+5. **Update docs when you ship** — see [Documentation](#documentation-mandatory-rules) below.
+6. **Do not commit or push** unless the user explicitly asks.
 
 ---
 
@@ -90,7 +106,7 @@ Every file under `DOCS/` starts with:
 - `FENCE_ITEMS` / `FENCE_POST` — fence snap and chain logic
 - `APP_RELEASE` — in-app version / modal only
 - `BLUEPRINT_VERSION` — save file schema
-- **Sidebar**: `#sidebar`, `--sidebar-width` / `--sidebar-slot-width`; `initSidebarChrome()`, `initFastTooltips()`; localStorage `builder3d-sidebar-collapsed`, `builder3d-sidebar-width`
+- **Sidebar**: `#sidebar`, `--sidebar-width` / `--sidebar-slot-width`; `initSidebarChrome()`, `initFastTooltips()`; localStorage `builder3d-sidebar-collapsed`, `builder3d-sidebar-width`, `builder3d-panel-design` (`classic` | `pop` → `body.sidebar-design-pop`), `builder3d-theme`; header **Design** / **Light panel** toggles
 
 ---
 
@@ -115,8 +131,9 @@ Every file under `DOCS/` starts with:
 
 ## Cursor / IDE rules
 
-- **Always applied:** `.cursor/rules/builder-3d-project.mdc` (version sync, docs, blueprint version).
-- This file (`AGENTS.md`) is the **human + agent onboarding** doc; keep it in sync when workflow changes.
+- **Always applied:** `.cursor/rules/builder-3d-project.mdc` — must point agents to **`AGENTS.md`** first; never replace this file.
+- **`DOCS/RULES_AGENTS.md`** — doc preservation and tables; defers to this file for hard rules and releases.
+- This file (`AGENTS.md`) is the **human + agent onboarding** doc; update it whenever workflow or agent rules change anywhere in the repo.
 
 ---
 
@@ -143,6 +160,9 @@ Every file under `DOCS/` starts with:
 
 | Doc | Purpose |
 |-----|---------|
+| **`AGENTS.md`** (root) | **Agent entry point** — read before coding |
+| `DOCS/RULES_AGENTS.md` | Doc preservation + post-task updates (extends this file) |
+| `.cursor/rules/builder-3d-project.mdc` | Cursor always-on summary (extends this file) |
 | `DOCS/SUMMARY.md` | Project status + quick links |
 | `DOCS/SCRATCHPAD.md` | Active work, last actions, blockers |
 | `DOCS/CHANGELOG.md` | Version history |

@@ -112,6 +112,7 @@ class BuilderApp {
         this._pointAccent = null;
         this._skyTexture = null;
         this._horizonGroup = null;
+        this.skyCloudsEnabled = true;
         this.lastPlacedSnap = null;
         this.helpOpen = false;
         this._ghostBox = new THREE.Box3();
@@ -169,14 +170,37 @@ class BuilderApp {
             this.showToast('Startup error - see console.', 'danger');
         } finally {
             this.setLoading(false);
-            setTimeout(() => {
-                try {
-                    this.tryRestoreDraft();
-                } finally {
-                    this.maybeShowReleaseModal();
-                }
-            }, 200);
+            this.beginSidebarEnterAnimation();
+            requestAnimationFrame(() => {
+                this.tryRestoreDraft()
+                    .catch((e) => console.warn('Draft restore skipped', e))
+                    .finally(() => this.maybeShowReleaseModal());
+            });
         }
+    }
+
+    beginSidebarEnterAnimation() {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+        if (this.reducedMotion) {
+            sidebar.classList.remove('is-entering', 'is-ready');
+            return;
+        }
+        sidebar.classList.add('is-entering');
+        sidebar.querySelectorAll('.tool-section').forEach((el, i) => {
+            el.style.setProperty('--enter-delay', `${i * 35}ms`);
+        });
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                sidebar.classList.add('is-ready');
+                window.setTimeout(() => {
+                    sidebar.classList.remove('is-entering', 'is-ready');
+                    sidebar.querySelectorAll('.tool-section').forEach((el) => {
+                        el.style.removeProperty('--enter-delay');
+                    });
+                }, 750);
+            });
+        });
     }
 
     setLoading(isLoading) {
@@ -208,8 +232,6 @@ class BuilderApp {
 
     setupScene() {
         this.scene = new THREE.Scene();
-        this._skyTexture = this.createSkyTexture('work');
-        this.scene.background = this._skyTexture;
         this.scene.fog = new THREE.Fog(0x5f6a70, 28, 92);
 
         this.camera = new THREE.PerspectiveCamera(
@@ -263,6 +285,64 @@ class BuilderApp {
         this.scene.add(this.innerPlane);
 
         this.createHorizonBackdrop();
+        this.initSkyCloudsPref();
+    }
+
+    initSkyCloudsPref() {
+        try {
+            const raw = localStorage.getItem('builder3d-sky-clouds');
+            if (raw === '0') this.skyCloudsEnabled = false;
+        } catch (e) {
+            /* ignore */
+        }
+        this.refreshSkyBackground();
+        this.syncSkyCloudsToggle();
+    }
+
+    paintSkyCloudStreaks(ctx, w, h, preset) {
+        if (!this.skyCloudsEnabled) return;
+        const baseAlpha = preset === 'night' ? 0.1 : preset === 'dusk' ? 0.18 : 0.26;
+        const streaks = [
+            { x: 0.22, y: 0.14, rw: 0.38, rh: 0.045, a: baseAlpha },
+            { x: 0.68, y: 0.11, rw: 0.42, rh: 0.05, a: baseAlpha * 0.92 },
+            { x: 0.48, y: 0.22, rw: 0.55, rh: 0.04, a: baseAlpha * 0.78 },
+            { x: 0.82, y: 0.19, rw: 0.28, rh: 0.035, a: baseAlpha * 0.65 },
+            { x: 0.12, y: 0.28, rw: 0.34, rh: 0.038, a: baseAlpha * 0.55 }
+        ];
+        ctx.save();
+        streaks.forEach((s) => {
+            ctx.beginPath();
+            ctx.ellipse(s.x * w, s.y * h, s.rw * w, s.rh * h, 0, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${s.a})`;
+            ctx.fill();
+        });
+        ctx.restore();
+    }
+
+    refreshSkyBackground(preset = this.lightingPreset) {
+        if (!this.scene) return;
+        if (this._skyTexture) this._skyTexture.dispose();
+        this._skyTexture = this.createSkyTexture(preset);
+        this.scene.background = this._skyTexture;
+    }
+
+    syncSkyCloudsToggle() {
+        const cb = document.getElementById('sky-clouds-toggle');
+        if (cb) cb.checked = this.skyCloudsEnabled;
+    }
+
+    setSkyCloudsEnabled(on, silent = false) {
+        this.skyCloudsEnabled = !!on;
+        this.refreshSkyBackground();
+        this.syncSkyCloudsToggle();
+        try {
+            localStorage.setItem('builder3d-sky-clouds', this.skyCloudsEnabled ? '1' : '0');
+        } catch (e) {
+            /* ignore */
+        }
+        if (!silent) {
+            this.showToast(this.skyCloudsEnabled ? 'Sky clouds on' : 'Sky clouds off', 'info');
+        }
     }
 
     setupLighting() {
@@ -312,6 +392,7 @@ class BuilderApp {
         g.addColorStop(1, palette[2]);
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        this.paintSkyCloudStreaks(ctx, canvas.width, canvas.height, preset);
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.magFilter = THREE.LinearFilter;
@@ -326,8 +407,7 @@ class BuilderApp {
             night: { color: 0x101624, near: 16, far: 58, exposure: 0.86 }
         }[preset] || { color: 0x6a7478, near: 30, far: 96, exposure: 1.08 };
         if (this._skyTexture) this._skyTexture.dispose();
-        this._skyTexture = this.createSkyTexture(preset);
-        this.scene.background = this._skyTexture;
+        this.refreshSkyBackground(preset);
         if (this.scene.fog) {
             this.scene.fog.color.setHex(fog.color);
             this.scene.fog.near = fog.near;
@@ -585,14 +665,26 @@ class BuilderApp {
         );
         this.gridHelper.position.y = 0.01;
         this.scene.add(this.gridHelper);
-        this.gridMajor = new THREE.GridHelper(
-            this.gridSize,
-            4,
-            0x115566,
-            0x1c1c20
-        );
-        this.gridMajor.position.y = 0.02;
+        this._majorGridMat = new THREE.LineBasicMaterial({
+            color: 0x00f2ff,
+            transparent: true,
+            opacity: 0.75,
+            depthWrite: false,
+        });
+        const half = this.gridSize / 2;
+        const step = 5;
+        const pts = [];
+        for (let i = -half; i <= half; i += step) {
+            pts.push(i, 0.025, -half, i, 0.025, half);
+            pts.push(-half, 0.025, i, half, 0.025, i);
+        }
+        const majorGeo = new THREE.BufferGeometry();
+        majorGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+        this.gridMajor = new THREE.LineSegments(majorGeo, this._majorGridMat);
         this.gridMajor.visible = false;
+        this.gridMajor.frustumCulled = false;
+        this.gridMajor.renderOrder = 2;
+        this._majorGridMat.visible = false;
         this.scene.add(this.gridMajor);
         const mg = new THREE.BufferGeometry();
         mg.setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]);
@@ -605,14 +697,28 @@ class BuilderApp {
         this.scene.add(this._measureLine);
     }
 
+    syncPlacementGridButton() {
+        const btn = document.getElementById('placement-grid-btn');
+        if (!btn || !this.gridHelper) return;
+        btn.classList.toggle('active', this.gridHelper.visible);
+    }
+
+    setPlacementGridVisible(on, silent = false) {
+        if (!this.gridHelper) return;
+        this.gridHelper.visible = !!on;
+        this.syncPlacementGridButton();
+        if (!silent) {
+            this.showToast(this.gridHelper.visible ? '1 m placement grid on' : '1 m placement grid off', 'info');
+        }
+    }
+
     setGridVisible(visible) {
-        if (this.gridHelper) this.gridHelper.visible = visible;
+        this.setPlacementGridVisible(visible, true);
     }
 
     toggleGrid() {
         if (!this.gridHelper) return;
-        this.gridHelper.visible = !this.gridHelper.visible;
-        this.showToast(this.gridHelper.visible ? 'Grid on' : 'Grid off', 'info');
+        this.setPlacementGridVisible(!this.gridHelper.visible);
     }
 
     getGroundYAt(x, z) {
@@ -986,13 +1092,25 @@ class BuilderApp {
         this.showToast(`Lighting: ${next}`, 'info');
     }
 
-    toggleMajorGrid() {
-        if (!this.gridMajor) return;
-        this.majorGridEnabled = !this.majorGridEnabled;
+    setMajorGridVisible(on) {
+        if (!this.gridMajor || !this._majorGridMat) return;
+        this.majorGridEnabled = !!on;
         this.gridMajor.visible = this.majorGridEnabled;
+        this._majorGridMat.visible = this.majorGridEnabled;
+        this._majorGridMat.opacity = this.majorGridEnabled ? 0.75 : 0;
         const btn = document.getElementById('major-grid-btn');
         if (btn) btn.classList.toggle('active', this.majorGridEnabled);
-        this.showToast(this.majorGridEnabled ? '5 m major grid on' : 'Major grid off', 'info');
+    }
+
+    toggleMajorGrid() {
+        if (!this.gridMajor) return;
+        this.setMajorGridVisible(!this.majorGridEnabled);
+        this.showToast(
+            this.majorGridEnabled
+                ? '5 m spacing guides on (20×20 m build zone)'
+                : '5 m spacing guides off',
+            'info'
+        );
     }
 
     updateOrthoFrustum() {
@@ -1160,15 +1278,42 @@ class BuilderApp {
         }, 900);
     }
 
-    tryRestoreDraft() {
+    promptRestoreDraft() {
+        return new Promise((resolve) => {
+            const backdrop = document.getElementById('draft-restore-backdrop');
+            const accept = document.getElementById('draft-restore-accept');
+            const decline = document.getElementById('draft-restore-decline');
+            if (!backdrop || !accept || !decline) {
+                resolve(false);
+                return;
+            }
+            const finish = (val) => {
+                backdrop.hidden = true;
+                accept.removeEventListener('click', onAccept);
+                decline.removeEventListener('click', onDecline);
+                document.removeEventListener('keydown', onKey);
+                resolve(val);
+            };
+            const onAccept = () => finish(true);
+            const onDecline = () => finish(false);
+            const onKey = (e) => {
+                if (e.key === 'Escape') finish(false);
+            };
+            accept.addEventListener('click', onAccept);
+            decline.addEventListener('click', onDecline);
+            document.addEventListener('keydown', onKey);
+            backdrop.hidden = false;
+            accept.focus();
+        });
+    }
+
+    async tryRestoreDraft() {
         try {
             const raw = localStorage.getItem('builder3d-draft');
             if (!raw || raw.length < 12) return;
             const data = JSON.parse(raw);
             if (!data.parts || !Array.isArray(data.parts) || data.parts.length === 0) return;
-            const ok = window.confirm(
-                'Found a saved scene draft in this browser. Restore it? (Cancel starts empty.)'
-            );
+            const ok = await this.promptRestoreDraft();
             if (!ok) return;
             this.importBlueprintJson(raw);
         } catch (e) {
@@ -2010,60 +2155,190 @@ class BuilderApp {
         this.showToast('Scene cleared. Undo: Ctrl+Z', 'info');
     }
 
+    escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    buildTakeoffGroupHtml(group) {
+        const rows =
+            group.rows.length > 0
+                ? group.rows
+                      .map(
+                          (r) =>
+                              `<div class="takeoff-row"><span class="takeoff-row__name">${this.escapeHtml(
+                                  r.name
+                              )}</span><span class="takeoff-row__count">${r.count}</span></div>`
+                      )
+                      .join('')
+                : '<span class="takeoff-empty">(none)</span>';
+        return `<div class="takeoff-group" data-takeoff-group="${this.escapeHtml(group.id)}">
+<button type="button" class="takeoff-group-toggle">${this.escapeHtml(group.title)}</button>
+<div class="takeoff-group-body">${rows}</div></div>`;
+    }
+
+    setAllTakeoffGroupsCollapsed(collapsed) {
+        document.querySelectorAll('#takeoff-body .takeoff-group').forEach((g) => {
+            g.classList.toggle('collapsed', collapsed);
+        });
+    }
+
+    initTakeoffPanel() {
+        const body = document.getElementById('takeoff-body');
+        if (body && body.dataset.takeoffBound !== '1') {
+            body.dataset.takeoffBound = '1';
+            body.addEventListener('click', (e) => {
+                const btn = e.target.closest('.takeoff-group-toggle');
+                if (!btn) return;
+                btn.closest('.takeoff-group')?.classList.toggle('collapsed');
+            });
+        }
+        document.getElementById('takeoff-expand-all')?.addEventListener('click', () => {
+            this.setAllTakeoffGroupsCollapsed(false);
+        });
+        document.getElementById('takeoff-collapse-all')?.addEventListener('click', () => {
+            this.setAllTakeoffGroupsCollapsed(true);
+        });
+    }
+
     updateTakeoff() {
+        const el = document.getElementById('takeoff-body');
+        if (!el) return;
+
+        if (this.objects.length === 0) {
+            el.innerHTML = '<p class="takeoff-empty">—</p>';
+            return;
+        }
+
         const byItem = new Map();
         const byMat = new Map();
+        const byLevel = new Map();
         for (const o of this.objects) {
             const it = o.userData.item || 'unknown';
             const m = o.userData.material || 'unknown';
             byItem.set(it, (byItem.get(it) || 0) + 1);
             byMat.set(m, (byMat.get(m) || 0) + 1);
+            const lv = o.userData.level ?? 0;
+            byLevel.set(lv, (byLevel.get(lv) || 0) + 1);
         }
-        let text = '—';
-        if (this.objects.length > 0) {
-            const lines = [
-                `Total: ${this.objects.length}`,
-                '',
-                'Piece counts:',
-                ...ITEM_TYPES.map((k) => {
-                    const c = byItem.get(k) || 0;
-                    if (c === 0) return null;
-                    return `${k}\t${c}`;
-                }).filter(Boolean)
-            ];
-            if (lines[lines.length - 1] === 'Piece counts:') {
-                lines.push('(none)');
-            }
-            lines.push('');
-            lines.push('Material counts:');
-            lines.push(
-                ...MATERIAL_KEYS.map((k) => {
-                    const c = byMat.get(k) || 0;
-                    if (c === 0) return null;
-                    return `${k}\t${c}`;
-                }).filter(Boolean)
-            );
-            if (lines[lines.length - 1] === 'Material counts:') {
-                lines.push('(none)');
-            }
-            const byLevel = new Map();
-            for (const o of this.objects) {
-                const lv = o.userData.level ?? 0;
-                byLevel.set(lv, (byLevel.get(lv) || 0) + 1);
-            }
-            lines.push('');
-            lines.push('By level:');
-            for (let L = 0; L <= 4; L++) {
-                const c = byLevel.get(L) || 0;
-                if (c) lines.push(`level ${L}\t${c}`);
-            }
-            if (lines[lines.length - 1] === 'By level:') {
-                lines.push('(none)');
-            }
-            text = lines.join('\n');
+
+        const groups = [
+            {
+                id: 'pieces',
+                title: 'Piece counts',
+                rows: ITEM_TYPES.filter((k) => byItem.get(k)).map((k) => ({
+                    name: k.replace(/_/g, ' '),
+                    count: byItem.get(k),
+                })),
+            },
+            {
+                id: 'materials',
+                title: 'Material counts',
+                rows: MATERIAL_KEYS.filter((k) => byMat.get(k)).map((k) => ({
+                    name: k.replace(/_/g, ' '),
+                    count: byMat.get(k),
+                })),
+            },
+            {
+                id: 'levels',
+                title: 'By level',
+                rows: [...byLevel.entries()]
+                    .sort((a, b) => a[0] - b[0])
+                    .map(([lv, count]) => ({ name: `Level ${lv}`, count })),
+            },
+        ];
+
+        el.innerHTML =
+            `<p class="takeoff-summary">Total: ${this.objects.length}</p>` +
+            groups.map((g) => this.buildTakeoffGroupHtml(g)).join('');
+    }
+
+    initTheme() {
+        const KEY = 'builder3d-theme';
+        let theme = 'dark';
+        try {
+            const saved = localStorage.getItem(KEY);
+            if (saved === 'light' || saved === 'dark') theme = saved;
+        } catch (e) {
+            /* ignore */
         }
-        const el = document.getElementById('takeoff-body');
-        if (el) el.textContent = text;
+        this.applyTheme(theme, { silent: true, persist: false });
+    }
+
+    applyTheme(theme, { silent = false, persist = true } = {}) {
+        const light = theme === 'light';
+        document.body.classList.toggle('theme-light', light);
+        document.body.classList.toggle('theme-dark', !light);
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) {
+            btn.setAttribute('aria-pressed', String(light));
+            btn.textContent = light ? 'Dark panel' : 'Light panel';
+            const tip = light
+                ? 'Switch tools panel to dark theme'
+                : 'Switch tools panel to light theme (whitish background, dark text)';
+            btn.setAttribute('title', tip);
+            btn.setAttribute('aria-label', tip);
+        }
+        if (persist) {
+            try {
+                localStorage.setItem('builder3d-theme', light ? 'light' : 'dark');
+            } catch (e) {
+                /* ignore */
+            }
+        }
+        if (!silent) {
+            this.showToast(light ? 'Light tools panel' : 'Dark tools panel', 'info');
+        }
+    }
+
+    toggleTheme() {
+        const next = document.body.classList.contains('theme-light') ? 'dark' : 'light';
+        this.applyTheme(next);
+    }
+
+    initPanelDesign() {
+        const KEY = 'builder3d-panel-design';
+        let mode = 'classic';
+        try {
+            const saved = localStorage.getItem(KEY);
+            if (saved === 'pop' || saved === 'classic') mode = saved;
+        } catch (e) {
+            /* ignore */
+        }
+        this.applyPanelDesign(mode, { silent: true, persist: false });
+    }
+
+    applyPanelDesign(mode, { silent = false, persist = true } = {}) {
+        const pop = mode === 'pop';
+        document.body.classList.toggle('sidebar-design-pop', pop);
+        const btn = document.getElementById('design-toggle-btn');
+        if (btn) {
+            btn.setAttribute('aria-pressed', String(pop));
+            btn.textContent = pop ? 'Classic' : 'Design';
+            const tip = pop
+                ? 'Switch tools panel to classic accordion layout'
+                : 'Pop-open button layout — sections open below each button';
+            btn.setAttribute('title', tip);
+            btn.setAttribute('aria-label', tip);
+        }
+        if (persist) {
+            try {
+                localStorage.setItem('builder3d-panel-design', pop ? 'pop' : 'classic');
+            } catch (e) {
+                /* ignore */
+            }
+        }
+        if (!silent) {
+            this.showToast(pop ? 'Pop-open panel design' : 'Classic panel layout', 'info');
+        }
+    }
+
+    togglePanelDesign() {
+        const next = document.body.classList.contains('sidebar-design-pop') ? 'classic' : 'pop';
+        this.applyPanelDesign(next);
     }
 
     getTakeoffTsv() {
@@ -2234,6 +2509,57 @@ class BuilderApp {
         this.setActiveMaterial(next);
     }
 
+    getSidebarSectionId(toggleBtn) {
+        const id = toggleBtn?.dataset?.sectionId;
+        if (id) return id;
+        const label = (toggleBtn?.textContent || '').trim().toLowerCase();
+        return label.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'section';
+    }
+
+    readSidebarSectionsStorage() {
+        try {
+            const raw = localStorage.getItem('builder3d-sidebar-sections');
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    persistSidebarSectionsFromDOM() {
+        const state = {};
+        document.querySelectorAll('.section-toggle').forEach((btn) => {
+            const key = this.getSidebarSectionId(btn);
+            if (key) state[key] = btn.classList.contains('collapsed');
+        });
+        try {
+            localStorage.setItem('builder3d-sidebar-sections', JSON.stringify(state));
+        } catch (e) {
+            /* storage disabled */
+        }
+    }
+
+    setToolSectionCollapsed(toggleBtn, collapsed) {
+        if (!toggleBtn) return;
+        toggleBtn.classList.toggle('collapsed', collapsed);
+        const body = toggleBtn.nextElementSibling;
+        if (body && body.classList.contains('section-body')) {
+            body.classList.toggle('collapsed', collapsed);
+        }
+    }
+
+    restoreSidebarSections() {
+        const saved = this.readSidebarSectionsStorage();
+        if (!Object.keys(saved).length) return;
+        document.querySelectorAll('.section-toggle').forEach((btn) => {
+            const key = this.getSidebarSectionId(btn);
+            if (Object.prototype.hasOwnProperty.call(saved, key)) {
+                this.setToolSectionCollapsed(btn, !!saved[key]);
+            }
+        });
+    }
+
     ensureSidebarSectionVisible(optionBtn) {
         if (!optionBtn) return;
         const section = optionBtn.closest('.tool-section');
@@ -2242,6 +2568,7 @@ class BuilderApp {
         if (toggle?.classList.contains('collapsed')) {
             toggle.classList.remove('collapsed');
             if (body?.classList.contains('section-body')) body.classList.remove('collapsed');
+            this.persistSidebarSectionsFromDOM();
         }
     }
 
@@ -2258,12 +2585,9 @@ class BuilderApp {
 
     setAllToolSectionsCollapsed(collapsed) {
         document.querySelectorAll('.section-toggle').forEach((btn) => {
-            btn.classList.toggle('collapsed', collapsed);
-            const body = btn.nextElementSibling;
-            if (body && body.classList.contains('section-body')) {
-                body.classList.toggle('collapsed', collapsed);
-            }
+            this.setToolSectionCollapsed(btn, collapsed);
         });
+        this.persistSidebarSectionsFromDOM();
     }
 
     setSidebarWidthPx(px) {
@@ -2307,8 +2631,12 @@ class BuilderApp {
     }
 
     initSidebarChrome() {
+        this.initTheme();
+        this.initPanelDesign();
         const WIDTH_KEY = 'builder3d-sidebar-width';
         const DEFAULT_W = 360;
+        const designBtn = document.getElementById('design-toggle-btn');
+        const themeBtn = document.getElementById('theme-toggle-btn');
         const collapseBtn = document.getElementById('sidebar-collapse-btn');
         const expandTab = document.getElementById('sidebar-expand-tab');
         const resizer = document.getElementById('sidebar-resizer');
@@ -2324,9 +2652,20 @@ class BuilderApp {
             if (localStorage.getItem('builder3d-sidebar-collapsed') === '1') {
                 this.setSidebarCollapsed(true, true);
             }
+            this.restoreSidebarSections();
         } catch (e) {
             /* ignore */
         }
+
+        designBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.togglePanelDesign();
+        });
+
+        themeBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleTheme();
+        });
 
         collapseBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -2595,6 +2934,14 @@ class BuilderApp {
             });
         }
 
+        const placementGridBtn = document.getElementById('placement-grid-btn');
+        if (placementGridBtn) {
+            placementGridBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleGrid();
+            });
+            this.syncPlacementGridButton();
+        }
         const majorGridBtn = document.getElementById('major-grid-btn');
         if (majorGridBtn) {
             majorGridBtn.addEventListener('click', (e) => {
@@ -2639,6 +2986,13 @@ class BuilderApp {
             sunSlider.addEventListener('input', () => {
                 this.updateSunPosition(parseFloat(sunSlider.value));
             });
+        }
+        const skyCloudsToggle = document.getElementById('sky-clouds-toggle');
+        if (skyCloudsToggle) {
+            skyCloudsToggle.addEventListener('change', () => {
+                this.setSkyCloudsEnabled(skyCloudsToggle.checked);
+            });
+            this.syncSkyCloudsToggle();
         }
         const helpBtn = document.getElementById('help-btn');
         const helpClose = document.getElementById('help-close');
@@ -2688,13 +3042,10 @@ class BuilderApp {
             });
         });
 
-        document.querySelectorAll('.section-toggle').forEach(btn => {
+        document.querySelectorAll('.section-toggle').forEach((btn) => {
             btn.addEventListener('click', () => {
-                btn.classList.toggle('collapsed');
-                const body = btn.nextElementSibling;
-                if (body && body.classList.contains('section-body')) {
-                    body.classList.toggle('collapsed');
-                }
+                this.setToolSectionCollapsed(btn, !btn.classList.contains('collapsed'));
+                this.persistSidebarSectionsFromDOM();
             });
         });
 
@@ -2756,6 +3107,7 @@ class BuilderApp {
                 fileInput.value = '';
             });
         }
+        this.initTakeoffPanel();
         const takeoffCopy = document.getElementById('export-takeoff-btn');
         if (takeoffCopy) {
             takeoffCopy.addEventListener('click', () => this.copyTakeoffTsv());

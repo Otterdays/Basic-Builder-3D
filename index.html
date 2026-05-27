@@ -28,7 +28,7 @@
         <canvas id="builder-canvas"></canvas>
         
         <div id="ui-overlay">
-            <aside id="sidebar" aria-label="Builder tools">
+            <aside id="sidebar" class="is-entering" aria-label="Builder tools">
                 <div id="sidebar-resizer" class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Resize tools panel" title="Drag to resize · double-click reset"></div>
                 <header class="sidebar-header">
                     <div class="sidebar-header__top">
@@ -36,14 +36,18 @@
                             <h1>3D BUILDER <span>CONSTRUCTION</span></h1>
                             <span id="app-version-pill" class="app-version-pill" title="Release version">—</span>
                         </div>
-                        <button type="button" id="sidebar-collapse-btn" class="sidebar-collapse-btn" title="Hide tools panel (B)" aria-label="Collapse tools panel" aria-expanded="true">‹</button>
+                        <div class="sidebar-header__actions">
+                            <button type="button" id="design-toggle-btn" class="sidebar-theme-btn" title="Pop-open button layout for tool sections" aria-pressed="false">Design</button>
+                            <button type="button" id="theme-toggle-btn" class="sidebar-theme-btn" title="Switch tools panel to light theme (whitish background)" aria-pressed="false">Light panel</button>
+                            <button type="button" id="sidebar-collapse-btn" class="sidebar-collapse-btn" title="Hide tools panel (B)" aria-label="Collapse tools panel" aria-expanded="true">‹</button>
+                        </div>
                     </div>
                     <p class="sidebar-header__hint">Materials &amp; pieces on the left · build in the view</p>
                 </header>
                 <nav id="toolbar" aria-label="Tool panels">
                 <div id="toolbar-scroll">
                     <section class="tool-section tool-section--primary">
-                        <button class="section-toggle" type="button">Materials &amp; site</button>
+                        <button class="section-toggle" type="button" data-section-id="materials-site">Materials &amp; site</button>
                         <div class="section-body">
                             <div class="options-grid" id="material-options">
                                 <button class="option-btn active" data-material="concrete" title="Concrete">
@@ -128,7 +132,7 @@
                     </section>
                     
                     <section class="tool-section tool-section--primary">
-                        <button class="section-toggle" type="button">Pieces to place</button>
+                        <button class="section-toggle" type="button" data-section-id="pieces">Pieces to place</button>
                         <div class="section-body">
                             <div class="options-grid" id="item-options">
                                 <button class="option-btn active" data-item="block" title="Block">
@@ -186,28 +190,34 @@
                     </section>
 
                     <section class="tool-section">
-                        <button class="section-toggle">Takeoff</button>
+                        <button class="section-toggle" type="button" data-section-id="takeoff" title="Live quantities: counts of each piece type and material in the scene (updates as you build)">Takeoff</button>
                         <div class="section-body">
-                            <div id="takeoff-panel" class="takeoff-panel">
-                                <pre id="takeoff-body" class="takeoff-body">—</pre>
+                            <div class="takeoff-toolbar actions-row" role="toolbar" aria-label="Takeoff groups">
+                                <button type="button" id="takeoff-expand-all" class="sidebar-footer-btn takeoff-toolbar-btn" title="Expand every takeoff group">Expand all</button>
+                                <span class="sidebar-footer-sep" aria-hidden="true">·</span>
+                                <button type="button" id="takeoff-collapse-all" class="sidebar-footer-btn takeoff-toolbar-btn" title="Collapse every takeoff group">Collapse all</button>
                             </div>
-                            <button type="button" id="export-takeoff-btn" class="action-btn secondary" title="Copy takeoff to clipboard" style="margin-top: 0.5rem; width: 100%;">Copy takeoff (TSV)</button>
+                            <div id="takeoff-panel" class="takeoff-panel">
+                                <div id="takeoff-body" class="takeoff-body" aria-live="polite"><p class="takeoff-empty">—</p></div>
+                            </div>
+                            <button type="button" id="export-takeoff-btn" class="action-btn secondary" title="Copy the takeoff table as tab-separated values for Excel or Sheets" style="margin-top: 0.5rem; width: 100%;">Copy takeoff (TSV)</button>
                         </div>
                     </section>
 
                     <section class="tool-section">
-                        <button class="section-toggle">Site & grid</button>
+                        <button class="section-toggle" type="button" data-section-id="site-grid">Site & grid</button>
                         <div class="section-body">
                             <div id="site-readout" class="site-readout" aria-live="polite">Cursor —</div>
-                            <div class="actions-row" style="margin-top:0.5rem">
-                                <button type="button" id="major-grid-btn" class="action-btn secondary" title="Toggle 5m major lines">5m major grid</button>
+                            <div class="actions-row actions-row--grid-toggles" style="margin-top:0.5rem">
+                                <button type="button" id="placement-grid-btn" class="action-btn secondary" title="1 m placement grid on the 20×20 m build zone — snap and align parts. Shortcut: G">1 m grid (G)</button>
+                                <button type="button" id="major-grid-btn" class="action-btn secondary" title="Bold lines every 5 m across the build zone — pace walls and slabs. Off = fully hidden.">5 m guides</button>
                             </div>
                             <p class="section-hint" style="margin-top:0.5rem;"><kbd>U</kbd> grassy yard · <kbd>H</kbd> paint both grounds with current material</p>
                         </div>
                     </section>
 
                     <section class="tool-section">
-                        <button class="section-toggle">Measure</button>
+                        <button class="section-toggle" type="button" data-section-id="measure">Measure</button>
                         <div class="section-body">
                             <p class="section-hint">Clicks: A → B (world units). <kbd>T</kbd> to toggle</p>
                             <div class="actions-row">
@@ -219,7 +229,7 @@
                     </section>
 
                     <section class="tool-section">
-                        <button class="section-toggle">Build level</button>
+                        <button class="section-toggle" type="button" data-section-id="build-level">Build level</button>
                         <div class="section-body">
                             <label class="field-label" for="build-level">Floor / lift (new parts)</label>
                             <select id="build-level" class="field-select" title="New placements get this level">
@@ -237,20 +247,26 @@
                     </section>
 
                     <section class="tool-section">
-                        <button class="section-toggle">Lighting</button>
+                        <button class="section-toggle" type="button" data-section-id="lighting">Lighting</button>
                         <div class="section-body">
                             <select id="lighting-preset" class="field-select" title="Site time-of-day (L)">
                                 <option value="work" selected>Work (bright)</option>
                                 <option value="dusk">Dusk (warm)</option>
                                 <option value="night">Night (lamp)</option>
                             </select>
-                            <label class="field-label" for="sun-angle-slider" style="margin-top: 0.65rem;">Sun Position</label>
-                            <input type="range" id="sun-angle-slider" min="0" max="360" value="45" class="field-range" title="Adjust sun angle" />
+                            <label class="check-row check-row--sky-clouds">
+                                <input type="checkbox" id="sky-clouds-toggle" checked />
+                                <span>Sky clouds</span>
+                            </label>
+                            <div class="field-stack field-stack--sun">
+                                <label class="field-label" for="sun-angle-slider">Sun position</label>
+                                <input type="range" id="sun-angle-slider" min="0" max="360" value="45" class="field-range field-range--sun" title="Rotate sun / shadows (degrees)" />
+                            </div>
                         </div>
                     </section>
 
                     <section class="tool-section">
-                        <button class="section-toggle">View & Tools</button>
+                        <button class="section-toggle" type="button" data-section-id="view-tools">View & Tools</button>
                         <div class="section-body">
                             <div class="actions-row">
                                 <button type="button" id="fp-toggle" class="action-btn fp-toggle" title="Walk the site in first person (collision on parts)">Walk (first person)</button>
@@ -262,7 +278,7 @@
                     </section>
 
                     <section class="tool-section">
-                        <button class="section-toggle">Blueprint</button>
+                        <button class="section-toggle" type="button" data-section-id="blueprint">Blueprint</button>
                         <div class="section-body">
                             <div class="actions-row">
                                 <button type="button" id="save-btn" class="action-btn">Save JSON</button>
@@ -273,7 +289,7 @@
                     </section>
 
                     <section class="tool-section actions">
-                        <button class="section-toggle">Actions</button>
+                        <button class="section-toggle" type="button" data-section-id="actions">Actions</button>
                         <div class="section-body">
                             <div class="actions-row">
                                 <button id="undo-btn" class="action-btn" title="Ctrl+Z">Undo</button>
@@ -284,7 +300,7 @@
                     </section>
 
                     <section class="tool-section" id="cloud-section">
-                        <button class="section-toggle">Local Server</button>
+                        <button class="section-toggle" type="button" data-section-id="local-server">Local Server</button>
                         <div class="section-body">
                             <p class="section-hint">Saves to your local Express server (localhost:3000). Start <strong>launch.bat</strong> to enable.</p>
                             <div class="actions-row">
@@ -324,6 +340,16 @@
         </div>
     </div>
     <div id="stats-overlay" class="stats-overlay" hidden aria-live="polite">—</div>
+    <div id="draft-restore-backdrop" class="help-backdrop draft-restore-backdrop" hidden>
+        <div class="help-dialog draft-restore-dialog" role="dialog" aria-modal="true" aria-labelledby="draft-restore-title">
+            <h2 id="draft-restore-title">Restore saved draft?</h2>
+            <p class="draft-restore-msg">Found a saved scene draft in this browser. Restore it, or start with an empty scene.</p>
+            <div class="draft-restore-actions actions-row">
+                <button type="button" id="draft-restore-decline" class="action-btn secondary">Start empty</button>
+                <button type="button" id="draft-restore-accept" class="action-btn">Restore draft</button>
+            </div>
+        </div>
+    </div>
     <div id="update-backdrop" class="help-backdrop update-backdrop" hidden>
         <div class="help-dialog update-dialog" role="dialog" aria-modal="true" aria-labelledby="update-title">
             <button type="button" class="help-close" id="update-close-btn" aria-label="Close">×</button>

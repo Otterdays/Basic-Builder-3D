@@ -1,5 +1,6 @@
 # Builder-3D — Roadmap
 
+[AMENDED 2026-05-27]: **AI agents:** read **`AGENTS.md`** (repo root) first; release detail in **`DOCS/RULES_RELEASES.md`**.
 [AMENDED 2026-04-27]: Release checklist for agents and humans: **`DOCS/RULES_RELEASES.md`** (sync **`APP_RELEASE`**, **`package.json`**, **`CHANGELOG`**).
 
 ## Phase 0 — Baseline

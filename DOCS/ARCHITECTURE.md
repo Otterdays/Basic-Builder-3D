@@ -1,6 +1,8 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # ARCHITECTURE
 
+[AMENDED 2026-05-27]: **AI agents** — read repo root **`AGENTS.md`** before this file; use ARCHITECTURE for system design detail after onboarding.
+
 ## System Overview
 The app is a single-page vanilla JS application.
 

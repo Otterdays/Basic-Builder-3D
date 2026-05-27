@@ -5,14 +5,15 @@ alwaysApply: true
 
 # Builder-3D — project rules (agents)
 
-**Start here:** repository root **`AGENTS.md`** (full playbook). **`DOCS/RULES_AGENTS.md`** — doc workflow detail.
+**Start here:** repository root **`AGENTS.md`** (full playbook — **read every session**). **`DOCS/RULES_AGENTS.md`** — doc workflow detail only.
 
 ## Must do on every task
 
-1. Read `DOCS/SUMMARY.md` → `DOCS/SCRATCHPAD.md` before coding.
-2. Read target files before editing; grep `main.js` — do not assume APIs exist.
-3. Match `main.js` / `index.html` / `style.css` patterns; minimal diff scope.
-4. **Do not commit or push** unless the user explicitly asks.
+1. Read **`AGENTS.md`** (root) — hard rules, releases, blueprints; do not skip for `SUMMARY` alone.
+2. Read `DOCS/SUMMARY.md` → `DOCS/SCRATCHPAD.md` before coding.
+3. Read target files before editing; grep `main.js` — do not assume APIs exist.
+4. Match `main.js` / `index.html` / `style.css` patterns; minimal diff scope.
+5. **Do not commit or push** unless the user explicitly asks.
 
 ## Docs (never delete)
 
@@ -37,7 +38,12 @@ alwaysApply: true
 - Shortcuts: `G` grid, `U` grassy yard, `H` paint both grounds, `B` sidebar collapse, `Y` = rotation **axis** (not yard), `C` clone hovered part.
 - Sidebar: `#sidebar` full-height dock; `initSidebarChrome` / `initFastTooltips`; `--sidebar-slot-width` for layout + HUD.
 
+## Keep rules in sync
+
+- If you change agent onboarding or workflow in this file or **`DOCS/RULES_AGENTS.md`**, update **`AGENTS.md`** in the same task so new agents still start at the root playbook.
+
 ## Never
 
 - Force-push main, `git config`, `--no-verify`, or version bump without full release doc sync.
 - Hand-build blueprint JSON without `buildBlueprintPayload()`.
+- Replace or bypass **`AGENTS.md`** with only `DOCS/*` or this summary.

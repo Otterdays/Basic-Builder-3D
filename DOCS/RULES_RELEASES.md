@@ -2,6 +2,8 @@
 
 # Release & update modal (Builder-3D)
 
+[AMENDED 2026-05-27]: **AI agents** start at repo root **`AGENTS.md`** (hard rules + release overview); use this file for the detailed ship checklist.
+
 When you ship a **user-facing** release, keep these in lockstep so the in-app update modal, header version pill, and docs stay accurate.
 
 ## Single source in code

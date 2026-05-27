@@ -25,6 +25,13 @@
 - [ ] Mobile/Touch support <!-- id: 10 -->
 
 ## Last 5 Actions
+1. Sidebar **Design** toggle (`#design-toggle-btn`, `builder3d-panel-design`, `body.sidebar-design-pop`) — pop-open button sections with card drop-down styling.
+1. Agent doc chain: `AGENTS.md` first; rule files must read and sync root playbook.
+1. Sky clouds toggle (Lighting); draft-restore in-app modal (non-blocking); sidebar stagger enter on load.
+1. Site & grid: split 1 m (G) + 5 m guide buttons; lighting sun slider layout fix (sticky/overflow).
+1. Sidebar: bright section titles; light/dark panel theme toggle (`builder3d-theme`); takeoff collapsible groups + expand/collapse all.
+1. 5 m spacing guides: custom `LineSegments` (full hide when off); button/tooltip copy; Takeoff section + export tooltips.
+1. Sidebar section fold state → `localStorage` `builder3d-sidebar-sections` (per `data-section-id`); restore on load; width/collapse keys unchanged.
 1. Updated DOCS (CHANGELOG, SUMMARY, ARCHITECTURE, AGENTS) for tools-panel UX.
 2. Sidebar collapse (`B`), drag-resize + dbl-click reset, expand tab, expand/collapse all sections, scroll-to-active tile.
 2. v1.1.0: added clone-under-cursor shortcut (`C`) on top of premium builder tools; docs and help copy updated.

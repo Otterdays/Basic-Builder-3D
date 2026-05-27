@@ -3,13 +3,15 @@
 # RULES_AGENTS — AI agent workflow
 
 [AMENDED 2026-05-21]: Canonical onboarding moved to repo root **`AGENTS.md`**. This file expands doc-preservation and task workflows for agents that only read `DOCS/`.
+[AMENDED 2026-05-27]: **All agents read `AGENTS.md` first** every session; this file does not replace it. Changing rules here or in `.cursor/rules/` requires updating **`AGENTS.md`** the same task.
 
 ## Before you write code
 
-1. `DOCS/SUMMARY.md` — what version is shipped and what the app does.
-2. `DOCS/SCRATCHPAD.md` — what humans/agents were doing last; do not contradict without annotating.
-3. `DOCS/STYLE_GUIDE.md` — naming, `[TRACE: …]`, release bumps.
-4. Grep/read the files you will edit (`main.js` is large; search first).
+1. **`AGENTS.md`** (repository root) — hard rules, releases, blueprints, code map. **Required every session**; do not substitute `SUMMARY` or this file alone.
+2. `DOCS/SUMMARY.md` — what version is shipped and what the app does.
+3. `DOCS/SCRATCHPAD.md` — what humans/agents were doing last; do not contradict without annotating.
+4. `DOCS/STYLE_GUIDE.md` — naming, `[TRACE: …]`, release bumps.
+5. Grep/read the files you will edit (`main.js` is large; search first).
 
 ## Doc preservation (non-negotiable)
 
@@ -25,7 +27,8 @@
 | Shipped a version | `APP_RELEASE`, `package.json`, `CHANGELOG`, `SUMMARY`, `SCRATCHPAD`; see `RULES_RELEASES.md` |
 | Changed placement / save format | `ARCHITECTURE.md` + bump `BLUEPRINT_VERSION` only with migration notes |
 | Added npm package | `SBOM.md` + justify in SCRATCHPAD |
-| Added shortcuts or items | `index.html` help + `AGENTS.md` feature list if workflow changed |
+| Added shortcuts or items | `index.html` help + **`AGENTS.md`** (feature list / shortcuts) if workflow changed |
+| Changed agent workflow or Cursor rules | **`AGENTS.md`** + `.cursor/rules/builder-3d-project.mdc` + this file (same task) |
 | Changed sidebar / panel layout | `ARCHITECTURE.md` (sidebar section) + `CHANGELOG` under current semver |
 
 ## Out of scope
