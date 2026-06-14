@@ -58,6 +58,15 @@ graph TD
 - **Levels**: `userData.level` (0–4) on meshes; takeoff TSV includes `level` rows; blueprint `parts[].level`; **Show only this level** toggles `mesh.visible`.
 - **Compass / help**: static DOM HUD; modal help panel.
 
+## [AMENDED 2026-05-27]: Sidebar QoL, grids, atmosphere UI (post–`v1.1.0`)
+- **Persistence (`localStorage`)**: **`builder3d-sidebar-sections`** (JSON map of `data-section-id` → collapsed); **`builder3d-theme`** (`light` | `dark`); **`builder3d-panel-design`** (`classic` | `pop`); existing **`builder3d-sidebar-collapsed`** / **`builder3d-sidebar-width`** unchanged.
+- **Header chrome**: **`#theme-toggle-btn`** → **`applyTheme()`** / **`body.theme-light`** (sidebar CSS variables only); **`#design-toggle-btn`** → **`body.sidebar-design-pop`** (card dropdown styling in `style.css`).
+- **Takeoff**: **`updateTakeoff()`** renders `.takeoff-group` blocks; **`#takeoff-expand-all`** / **`#takeoff-collapse-all`**; group toggles via delegated click on **`#takeoff-body`**.
+- **Grids**: **`#placement-grid-btn`** ↔ **`gridHelper.visible`** (same as **`G`** / **`toggleGrid()`**); **`#major-grid-btn`** ↔ **`gridMajor`** (`LineSegments` every 5 m on 20×20 m pad, material opacity 0 when off).
+- **Sky**: **`createSkyTexture()`** + **`paintSkyCloudStreaks()`**; **`#sky-clouds-toggle`** / **`builder3d-sky-clouds`**; **`refreshSkyBackground()`** on preset or toggle.
+- **Startup**: **`setLoading(false)`** → **`beginSidebarEnterAnimation()`** → **`requestAnimationFrame`** → **`tryRestoreDraft()`** (async **`promptRestoreDraft()`** modal, not **`confirm`**) → **`maybeShowReleaseModal()`**. Scene **`animate()`** loop never blocked by draft UI.
+- **Layout fix**: `.section-toggle` sticky only under **`.tool-section--primary`**; expanded **`.section-body`** uses **`overflow: visible`** + bottom padding so **`#sun-angle-slider`** is not clipped.
+
 ## [AMENDED 2026-05-21]: Tools panel / sidebar (`v1.1.0` UI)
 - **Layout**: `#ui-overlay` is a two-column grid — **`--sidebar-slot-width`** (0 when collapsed) + **`viewport-chrome`** (shortcut bar). **`#sidebar`** is a full-viewport-height left dock: header (title, version pill, hint), scrollable **`#toolbar-scroll`** (collapsible `.tool-section`s), footer (**Expand all** / **Collapse all**).
 - **Collapse**: `body.sidebar-collapsed` sets slot width to 0; **`#sidebar-expand-tab`** (fixed left) restores. Toggle via **`#sidebar-collapse-btn`**, **`B`**, or `toggleSidebarCollapsed()`; persisted **`builder3d-sidebar-collapsed`**.
@@ -76,7 +85,7 @@ graph TD
 - **Compass HUD**: `.compass-hud__inner` **`transform: rotate(-azimuth)`** each frame from **`OrbitControls.getAzimuthalAngle()`** in orbit mode or **`fp.yaw`** in walk mode.
 - **Camera**: **`Home`** → `resetOrbitCamera()` (origin target, (10,10,10) eye, exit ortho if needed). **`F`** → `frameAllInView()` (bounding box of `objects[]`; ortho mode adjusts target, camera height, and `orthoSize` frustum).
 - **Blueprint clipboard**: `copyBlueprintToClipboard()` — same JSON as file save, via **Clipboard API**; button `#copy-blueprint-btn`.
-- **Draft persistence**: `localStorage` key `builder3d-draft`, debounced **`scheduleDraftSave`** after place/remove/clear/import/undo/redo; **`tryRestoreDraft`** confirms on startup.
+- **Draft persistence**: `localStorage` key `builder3d-draft`, debounced **`scheduleDraftSave`** after place/remove/clear/import/undo/redo; **[AMENDED 2026-05-27]** **`tryRestoreDraft`** uses **`#draft-restore-backdrop`** (Restore / Start empty) instead of blocking **`window.confirm`**.
 - **`Esc` hierarchy**: exit first-person → close help → exit measure (**`keydown`** handler expansion).
 - **Delete keys**: **`Delete` / `Backspace`** → `removeObject()` (when not measuring / not walking).
 - **Stats overlay** (`#stats-overlay`, **`**` **` backtick)**: FPS + part count; hidden by default.

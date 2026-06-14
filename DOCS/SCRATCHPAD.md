@@ -2,6 +2,7 @@
 # SCRATCHPAD
 
 ## Active Tasks
+[AMENDED 2026-05-27]: **Docs** — `CHANGELOG` `[Unreleased]`, `SUMMARY`, `ARCHITECTURE` (2026-05-27 sidebar/grid/sky/draft modal) synced; no semver bump yet (`APP_RELEASE` still **1.1.0**).
 [AMENDED 2026-05-21]: **v1.1.0** — Atmosphere pass shipped: gradient sky, terrain horizon, haze ring, hemisphere fill, warmer directional light, softer fog.
 [AMENDED 2026-05-21]: Docs synced — CHANGELOG/SUMMARY/ARCHITECTURE/AGENTS for sidebar dock, collapse (`B`), resize, fast tooltips, panel QoL.
 [AMENDED 2026-05-21]: **v1.1.0** — Premium Enhancements shipped: shadows/sun slider, paintbrush + eyedropper, placement VFX, wedge/stairs, `C` clone, collapsible/resizable tools panel.
@@ -25,6 +26,7 @@
 - [ ] Mobile/Touch support <!-- id: 10 -->
 
 ## Last 5 Actions
+1. Docs: `CHANGELOG` [Unreleased], `SUMMARY`, `ARCHITECTURE`, this scratchpad — sidebar QoL batch documented.
 1. Sidebar **Design** toggle (`#design-toggle-btn`, `builder3d-panel-design`, `body.sidebar-design-pop`) — pop-open button sections with card drop-down styling.
 1. Agent doc chain: `AGENTS.md` first; rule files must read and sync root playbook.
 1. Sky clouds toggle (Lighting); draft-restore in-app modal (non-blocking); sidebar stagger enter on load.

@@ -1,5 +1,6 @@
 # SUMMARY
 Project: Builder-3D
+[AMENDED 2026-05-27]: **Sidebar QoL (unreleased, on `main`)** — section fold + theme + Design layout persistence; takeoff groups; 1 m / 5 m grid buttons; sky-clouds toggle; non-blocking draft-restore modal; sidebar enter animation. See **`CHANGELOG`** `[Unreleased]` and **`ARCHITECTURE.md`** (2026-05-27 amendment).
 [AMENDED 2026-05-27]: **AI agents:** entry point is repo root **`AGENTS.md`** (read first every session); then this file and **`SCRATCHPAD.md`**. Rule chain: `.cursor/rules/builder-3d-project.mdc` → **`AGENTS.md`** → **`DOCS/RULES_AGENTS.md`**.
 [AMENDED 2026-05-21]: **v1.1.0** — atmosphere depth pass added: gradient sky, distant terrain silhouettes, horizon haze, warmer daylight, and softer fog.
 [AMENDED 2026-05-21]: **v1.1.0** — premium tools (shadows, sun slider, paintbrush, eyedropper, VFX, wedge/stairs, **`C`** clone) + full-height **collapsible/resizable** tools panel (**`B`**, drag edge, fast tooltips, expand/collapse all).

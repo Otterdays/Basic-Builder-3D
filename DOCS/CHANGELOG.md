@@ -1,6 +1,21 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # CHANGELOG
 
+## [Unreleased]
+### Added
+- **Sidebar section persistence**: per-section fold state in **`builder3d-sidebar-sections`** (`data-section-id` on `.section-toggle`); restored in **`initSidebarChrome()`**.
+- **Panel themes**: **Light panel** / **Dark panel** header toggle; **`body.theme-light`** whitish sidebar + dark text; persisted **`builder3d-theme`**.
+- **Design layout**: **Design** header toggle; **`body.sidebar-design-pop`** card-style section bodies; persisted **`builder3d-panel-design`** (`classic` | `pop`).
+- **Takeoff UI**: collapsible groups (pieces / materials / levels) with **Expand all** / **Collapse all** toolbar inside the Takeoff section.
+- **Site & grid controls**: side-by-side **1 m grid (G)** and **5 m guides** buttons; 1 m uses existing **`gridHelper`** + **`G`**; 5 m uses dedicated **`LineSegments`** (fully hidden when off).
+- **Sky clouds**: **Sky clouds** checkbox under Lighting; procedural streaks on gradient sky canvas; persisted **`builder3d-sky-clouds`**.
+- **Draft restore modal**: **`#draft-restore-backdrop`** replaces blocking **`window.confirm`** on startup so the scene and sidebar keep animating behind the prompt.
+- **Sidebar enter animation**: staggered `.tool-section` fade/slide on load (`#sidebar.is-entering` → **`is-ready`**); respects **`prefers-reduced-motion`**.
+### Changed
+- **Section title contrast**: all `.section-toggle` labels use **`--sidebar-fg`** (no dim secondary color on non-primary sections).
+- **Lighting layout**: sun slider in **`.field-stack--sun`**; sticky section headers only on **primary** sections (fixes slider clipped by next header).
+- **5 m guides**: tooltip and button copy clarify difference from 1 m placement grid.
+
 ## [1.1.0] - 2026-05-21
 ### Added
 - **Premium builder tools**: real-time shadows, sun position slider, paintbrush material edits, eyedropper (`I` / middle-click), placement dust VFX, roof wedge, and stair geometry.
