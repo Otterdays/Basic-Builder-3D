@@ -1,6 +1,12 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # CHANGELOG
 
+[AMENDED 2026-06-17]: **v1.1.1** — Release sync: `APP_RELEASE` + `package.json` bumped; post-processing user-facing highlight added to update modal.
+
+## [1.1.1] - 2026-06-17
+### Added
+- **Post-processing pipeline** (`main.js`): `EffectComposer` with HalfFloat MSAA render target (`samples: 4`); `GTAOPass` contact-shadow ambient occlusion; `UnrealBloomPass` (strength 0.5, radius 0.4, threshold 0.82); `OutputPass` ACESFilmic tone map + sRGB. `setupComposer()` + `renderFrame()`; composer resizes with viewport; ortho/perspective camera synced each frame; graceful fallback to direct `renderer.render` on GPU failure. Screenshots use the post chain.
+
 [AMENDED 2026-05-21]: **v1.1.0** — Post-processing pass: `EffectComposer` + `GTAOPass` (contact-shadow AO) + `UnrealBloomPass` (strength 0.5, radius 0.4, threshold 0.82) + `OutputPass` (ACESFilmic tone map + sRGB). HalfFloat MSAA (`samples: 4`) render target. `setupComposer()` + `renderFrame()` in `main.js`; `onResize` propagates to composer; ortho/persp camera synced each frame. Falls back to direct `renderer.render` on failure. SBOM updated.
 
 ## [Unreleased]

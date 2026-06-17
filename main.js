@@ -29,17 +29,17 @@ const BLUEPRINT_VERSION = 3;
 /** Shown in the update modal - bump with each user-facing release (see DOCS/RULES_RELEASES.md). */
 const STORAGE_SEEN_RELEASE_KEY = 'builder3d-seen-release';
 const APP_RELEASE = {
-    version: '1.1.0',
-    dateLabel: '2026-05-21',
+    version: '1.1.1',
+    dateLabel: '2026-06-17',
     highlights: [
+        'Post-processing pipeline: contact-shadow ambient occlusion, subtle bloom on bright materials, and ACES filmic tone mapping for richer depth and color.',
         'WebGL Real-time Shadow Mapping & Sun Position Slider in the Lighting sidebar.',
         'Site atmosphere pass: gradient sky, horizon terrain silhouettes, haze, and warmer daylight.',
         'Paintbrush Tool & Eyedropper (press I or middle-click placed block to copy it, use paintbrush to paint new materials onto placed blocks).',
         'Dust Burst Placement VFX - color-coded particles matching placed materials (wood, stone, water, glass).',
         'New geometries: Roof Wedges (Triangle Prisms) and Staircases (climbable in first-person mode!).',
         'Clone hovered parts with C for faster repeated architectural layouts.',
-        'Full Undo/Redo support for paintbrush material changes.',
-        'Authors: bump APP_RELEASE with each release and mirror notes in DOCS/CHANGELOG.md (see DOCS/RULES_RELEASES.md).'
+        'Full Undo/Redo support for paintbrush material changes.'
     ]
 };
 
