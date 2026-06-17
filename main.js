@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { api } from './api.js';
 
 // [TRACE: main.js]
@@ -43,6 +48,7 @@ class BuilderApp {
         this.scene = null;
         this.camera = null;
         this.renderer = null;
+        this.composer = null;
         this.controls = null;
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
@@ -155,6 +161,7 @@ class BuilderApp {
         try {
             this.setupScene();
             this.setupLighting();
+            this.setupComposer();
             await this.loadTextures();
             this.applyGroundMaterials(this.siteGround.outer, this.siteGround.inner);
             this.setupHelpers();
@@ -374,6 +381,58 @@ class BuilderApp {
         this.scene.add(point1);
 
         this.updateSunPosition(this.sunAngle);
+    }
+
+    setupComposer() {
+        try {
+            const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+            // HalfFloat + MSAA target: keeps antialiasing through the post chain and
+            // gives bloom an HDR buffer to threshold against.
+            const renderTarget = new THREE.WebGLRenderTarget(size.x, size.y, {
+                type: THREE.HalfFloatType,
+                samples: 4
+            });
+            const composer = new EffectComposer(this.renderer, renderTarget);
+            composer.setPixelRatio(this.renderer.getPixelRatio());
+            composer.setSize(window.innerWidth, window.innerHeight);
+
+            const renderPass = new RenderPass(this.scene, this.camera);
+            composer.addPass(renderPass);
+
+            const gtaoPass = new GTAOPass(this.scene, this.camera, size.x, size.y);
+            gtaoPass.output = GTAOPass.OUTPUT.Default;
+            composer.addPass(gtaoPass);
+
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.5,  // strength
+                0.4,  // radius
+                0.82  // threshold
+            );
+            composer.addPass(bloomPass);
+
+            // OutputPass applies the renderer's tone mapping + sRGB at the end of the chain.
+            composer.addPass(new OutputPass());
+
+            this.composer = composer;
+            this.renderPass = renderPass;
+            this.gtaoPass = gtaoPass;
+            this.bloomPass = bloomPass;
+        } catch (err) {
+            console.warn('Post-processing unavailable - falling back to direct render.', err);
+            this.composer = null;
+        }
+    }
+
+    renderFrame() {
+        if (this.composer) {
+            // Keep the post passes pointed at the active camera (perspective <-> ortho).
+            this.renderPass.camera = this.camera;
+            this.gtaoPass.camera = this.camera;
+            this.composer.render();
+        } else {
+            this.renderer.render(this.scene, this.camera);
+        }
     }
 
     createSkyTexture(preset = 'work') {
@@ -1187,6 +1246,7 @@ class BuilderApp {
             this._perspCamera.updateProjectionMatrix();
         }
         this.renderer.setSize(w, h);
+        if (this.composer) this.composer.setSize(w, h);
     }
 
     resetOrbitCamera() {
@@ -3338,7 +3398,7 @@ class BuilderApp {
         this.updateCompassHud();
         this.updateStats(dt);
         this.updateParticles(dt);
-        this.renderer.render(this.scene, this.camera);
+        this.renderFrame();
     }
 
     updateParticles(dt) {
@@ -3463,7 +3523,7 @@ class BuilderApp {
 
     captureScreenshot() {
         try {
-            this.renderer.render(this.scene, this.camera);
+            this.renderFrame();
             return this.renderer.domElement.toDataURL('image/jpeg', 0.55);
         } catch (e) {
             return null;

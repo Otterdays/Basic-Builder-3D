@@ -2,6 +2,7 @@
 # SCRATCHPAD
 
 ## Active Tasks
+[AMENDED 2026-05-21]: **v1.1.0** — Post-processing pipeline: `EffectComposer` (HalfFloat MSAA target, `samples:4`), `GTAOPass` (contact-shadow AO), `UnrealBloomPass` (strength 0.5 / radius 0.4 / threshold 0.82), `OutputPass` (ACESFilmic+sRGB). `setupComposer()` + `renderFrame()` in `main.js`; `onResize` propagates to composer; camera synced each frame for ortho/persp; fallback to direct render on GPU failure. CHANGELOG/SUMMARY/SBOM/SCRATCHPAD updated.
 [AMENDED 2026-05-27]: **Docs** — `CHANGELOG` `[Unreleased]`, `SUMMARY`, `ARCHITECTURE` (2026-05-27 sidebar/grid/sky/draft modal) synced; no semver bump yet (`APP_RELEASE` still **1.1.0**).
 [AMENDED 2026-05-21]: **v1.1.0** — Atmosphere pass shipped: gradient sky, terrain horizon, haze ring, hemisphere fill, warmer directional light, softer fog.
 [AMENDED 2026-05-21]: Docs synced — CHANGELOG/SUMMARY/ARCHITECTURE/AGENTS for sidebar dock, collapse (`B`), resize, fast tooltips, panel QoL.

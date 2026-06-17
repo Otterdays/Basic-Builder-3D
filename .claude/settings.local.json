@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"E:\\\\AI\\\\Basic-Builder-3D\" log --oneline -15)",
+      "Bash(node server/index.js)",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}

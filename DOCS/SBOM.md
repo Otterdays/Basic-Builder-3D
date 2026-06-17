@@ -1,6 +1,7 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # SBOM
 
+[AMENDED 2026-05-21]: **v1.1.0** — New CDN addon modules from `three@0.160.0/examples/jsm/` (same pinned version, loaded via `three/addons/` importmap): `postprocessing/EffectComposer.js`, `postprocessing/RenderPass.js`, `postprocessing/GTAOPass.js`, `postprocessing/UnrealBloomPass.js`, `postprocessing/OutputPass.js`. No new npm packages.
 [AMENDED 2026-04-27]: **v1.0.2** — Added Node.js `express` (^4.19.2) as a local backend server to replace `npx serve`. Built a custom JSON-based storage engine (`server/db.js`) instead of SQLite to ensure zero native-compilation requirements.
 [AMENDED 2026-04-27]: v1.0.1 — no dependency changes; **localStorage** also used for **`builder3d-seen-release`** (update modal dismiss version).
 [AMENDED 2026-04-27]: v1.0.0 Update 2 — no new npm packages or CDN version changes (`three@0.160.0`); added **Clipboard API** + **`localStorage`** (browser built-ins) for blueprint copy/draft persistence.

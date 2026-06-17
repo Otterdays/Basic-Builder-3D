@@ -1,6 +1,8 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # CHANGELOG
 
+[AMENDED 2026-05-21]: **v1.1.0** — Post-processing pass: `EffectComposer` + `GTAOPass` (contact-shadow AO) + `UnrealBloomPass` (strength 0.5, radius 0.4, threshold 0.82) + `OutputPass` (ACESFilmic tone map + sRGB). HalfFloat MSAA (`samples: 4`) render target. `setupComposer()` + `renderFrame()` in `main.js`; `onResize` propagates to composer; ortho/persp camera synced each frame. Falls back to direct `renderer.render` on failure. SBOM updated.
+
 ## [Unreleased]
 ### Added
 - **Sidebar section persistence**: per-section fold state in **`builder3d-sidebar-sections`** (`data-section-id` on `.section-toggle`); restored in **`initSidebarChrome()`**.
