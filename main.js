@@ -29,17 +29,17 @@ const BLUEPRINT_VERSION = 3;
 /** Shown in the update modal - bump with each user-facing release (see DOCS/RULES_RELEASES.md). */
 const STORAGE_SEEN_RELEASE_KEY = 'builder3d-seen-release';
 const APP_RELEASE = {
-    version: '1.1.1',
+    version: '1.2.0',
     dateLabel: '2026-06-17',
     highlights: [
         'Post-processing pipeline: contact-shadow ambient occlusion, subtle bloom on bright materials, and ACES filmic tone mapping for richer depth and color.',
+        'Sidebar QoL: light/dark panel themes, Design card layout, per-section fold persistence, and staggered enter animation.',
+        'Site & grid controls: separate 1 m placement grid (G) and 5 m guide lines; optional procedural sky clouds under Lighting.',
+        'Takeoff panel: collapsible piece/material/level groups with Expand all / Collapse all.',
+        'Draft restore uses a non-blocking modal so the scene keeps animating behind the prompt.',
         'WebGL Real-time Shadow Mapping & Sun Position Slider in the Lighting sidebar.',
-        'Site atmosphere pass: gradient sky, horizon terrain silhouettes, haze, and warmer daylight.',
-        'Paintbrush Tool & Eyedropper (press I or middle-click placed block to copy it, use paintbrush to paint new materials onto placed blocks).',
-        'Dust Burst Placement VFX - color-coded particles matching placed materials (wood, stone, water, glass).',
-        'New geometries: Roof Wedges (Triangle Prisms) and Staircases (climbable in first-person mode!).',
-        'Clone hovered parts with C for faster repeated architectural layouts.',
-        'Full Undo/Redo support for paintbrush material changes.'
+        'Paintbrush Tool & Eyedropper (press I or middle-click placed block to copy it).',
+        'Clone hovered parts with C for faster repeated architectural layouts.'
     ]
 };
 

@@ -1,6 +1,23 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # CHANGELOG
 
+[AMENDED 2026-06-17]: **v1.2.0** — Release sync: promoted sidebar `[Unreleased]` to shipped; `APP_RELEASE` / `package.json` bumped to **1.2.0**; update modal highlights post-processing + sidebar QoL.
+
+## [1.2.0] - 2026-06-17
+### Added
+- **Sidebar section persistence**: per-section fold state in **`builder3d-sidebar-sections`** (`data-section-id` on `.section-toggle`); restored in **`initSidebarChrome()`**.
+- **Panel themes**: **Light panel** / **Dark panel** header toggle; **`body.theme-light`** whitish sidebar + dark text; persisted **`builder3d-theme`**.
+- **Design layout**: **Design** header toggle; **`body.sidebar-design-pop`** card-style section bodies; persisted **`builder3d-panel-design`** (`classic` | `pop`).
+- **Takeoff UI**: collapsible groups (pieces / materials / levels) with **Expand all** / **Collapse all** toolbar inside the Takeoff section.
+- **Site & grid controls**: side-by-side **1 m grid (G)** and **5 m guides** buttons; 1 m uses existing **`gridHelper`** + **`G`**; 5 m uses dedicated **`LineSegments`** (fully hidden when off).
+- **Sky clouds**: **Sky clouds** checkbox under Lighting; procedural streaks on gradient sky canvas; persisted **`builder3d-sky-clouds`**.
+- **Draft restore modal**: **`#draft-restore-backdrop`** replaces blocking **`window.confirm`** on startup so the scene and sidebar keep animating behind the prompt.
+- **Sidebar enter animation**: staggered `.tool-section` fade/slide on load (`#sidebar.is-entering` → **`is-ready`**); respects **`prefers-reduced-motion`**.
+### Changed
+- **Section title contrast**: all `.section-toggle` labels use **`--sidebar-fg`** (no dim secondary color on non-primary sections).
+- **Lighting layout**: sun slider in **`.field-stack--sun`**; sticky section headers only on **primary** sections (fixes slider clipped by next header).
+- **5 m guides**: tooltip and button copy clarify difference from 1 m placement grid.
+
 [AMENDED 2026-06-17]: **v1.1.1** — Release sync: `APP_RELEASE` + `package.json` bumped; post-processing user-facing highlight added to update modal.
 
 ## [1.1.1] - 2026-06-17
@@ -8,6 +25,8 @@
 - **Post-processing pipeline** (`main.js`): `EffectComposer` with HalfFloat MSAA render target (`samples: 4`); `GTAOPass` contact-shadow ambient occlusion; `UnrealBloomPass` (strength 0.5, radius 0.4, threshold 0.82); `OutputPass` ACESFilmic tone map + sRGB. `setupComposer()` + `renderFrame()`; composer resizes with viewport; ortho/perspective camera synced each frame; graceful fallback to direct `renderer.render` on GPU failure. Screenshots use the post chain.
 
 [AMENDED 2026-05-21]: **v1.1.0** — Post-processing pass: `EffectComposer` + `GTAOPass` (contact-shadow AO) + `UnrealBloomPass` (strength 0.5, radius 0.4, threshold 0.82) + `OutputPass` (ACESFilmic tone map + sRGB). HalfFloat MSAA (`samples: 4`) render target. `setupComposer()` + `renderFrame()` in `main.js`; `onResize` propagates to composer; ortho/persp camera synced each frame. Falls back to direct `renderer.render` on failure. SBOM updated.
+
+[AMENDED 2026-06-17]: **Superseded by [1.2.0]** — items below shipped in v1.2.0; section kept for history.
 
 ## [Unreleased]
 ### Added

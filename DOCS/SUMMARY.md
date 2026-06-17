@@ -1,8 +1,9 @@
 # SUMMARY
 Project: Builder-3D
+[AMENDED 2026-06-17]: **v1.2.0** — Shipped sidebar QoL + post-processing release sync: themes, Design layout, grid/sky controls, draft modal, takeoff groups; `APP_RELEASE` / `package.json` at **1.2.0**.
 [AMENDED 2026-06-17]: **v1.1.1** — Shipped post-processing release sync: `APP_RELEASE` / `package.json` / CHANGELOG aligned; update modal highlights AO + bloom + tone mapping.
 [AMENDED 2026-05-21]: **v1.1.0** — Post-processing pipeline (`main.js`): GTAOPass contact-shadow AO + UnrealBloomPass emissive/highlight glow + OutputPass ACESFilmic+sRGB via EffectComposer; HalfFloat MSAA render target; camera-synced ortho/persp; graceful GPU fallback.
-[AMENDED 2026-05-27]: **Sidebar QoL (unreleased, on `main`)** — section fold + theme + Design layout persistence; takeoff groups; 1 m / 5 m grid buttons; sky-clouds toggle; non-blocking draft-restore modal; sidebar enter animation. See **`CHANGELOG`** `[Unreleased]` and **`ARCHITECTURE.md`** (2026-05-27 amendment).
+[AMENDED 2026-05-27]: **Sidebar QoL (shipped v1.2.0)** — section fold + theme + Design layout persistence; takeoff groups; 1 m / 5 m grid buttons; sky-clouds toggle; non-blocking draft-restore modal; sidebar enter animation. See **`CHANGELOG`** `[1.2.0]` and **`ARCHITECTURE.md`** (2026-05-27 amendment).
 [AMENDED 2026-05-27]: **AI agents:** entry point is repo root **`AGENTS.md`** (read first every session); then this file and **`SCRATCHPAD.md`**. Rule chain: `.cursor/rules/builder-3d-project.mdc` → **`AGENTS.md`** → **`DOCS/RULES_AGENTS.md`**.
 [AMENDED 2026-05-21]: **v1.1.0** — atmosphere depth pass added: gradient sky, distant terrain silhouettes, horizon haze, warmer daylight, and softer fog.
 [AMENDED 2026-05-21]: **v1.1.0** — premium tools (shadows, sun slider, paintbrush, eyedropper, VFX, wedge/stairs, **`C`** clone) + full-height **collapsible/resizable** tools panel (**`B`**, drag edge, fast tooltips, expand/collapse all).
