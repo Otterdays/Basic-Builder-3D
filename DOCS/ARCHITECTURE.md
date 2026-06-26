@@ -1,6 +1,18 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # ARCHITECTURE
 
+[AMENDED 2026-06-26]: **Placement bounds & zone UX (`v1.3.0`)**
+- **20×20 m build pad** (`innerPlane`, `gridSize`, 1 m grid, 5 m guides) is the primary snap area; **100×100 m outer yard** (`plane`, `SITE_OUTER_HALF`) supports walk + optional placement — **no hard XZ clamp** on ghost/place.
+- **Soft zone feedback**: off-pad → amber ghost (`0xffaa44`), readout suffix `yard (off 20×20 pad)`, **`#zone-hud`** Yard chip; overlap blocked still uses red (`0xff3355`).
+- **Build boundary ring**: `LineLoop` at ±10 m, y ≈ 0.012; toggle **`#build-zone-ring-btn`**; **`builder3d-build-zone-ring`** in `localStorage` (default on).
+- **Ground seam**: `innerPlane` at y ≈ +0.005 above outer floor; **`getGroundYAt`** inner → outer → objects (ghost, measure, FP walk).
+- **Stack lock whitelist** (`STACK_LOCK_ITEMS`): `pipe`, `column`, `pex`, `spray` only — blocks/lumber/etc. use grid snap, not vertical stack lock.
+- **Paintbrush**: overlap exempt; raycast **placed parts only** (not ground); ghost is aim feedback.
+- **Heights**: `ITEM_HEIGHTS` for wedge/stairs/fence/spray/paintbrush; **`snapGhostYToSurface`** for ground-class items + beam/slab flat hits.
+- **Clone (`C`)**: ghost position when visible; else face step 1 m or Alt ¼ m.
+- **Fence (`N`)**: bearing from last two posts when ≥2 exist; ground Y via **`getGroundYAt`**; side-click chain still via **`trySnapFenceGhost`** on post faces only.
+- **FP collision caveat**: AABB vs rotated meshes remains loose — OBB/tighter collision deferred (see **`roadmap.md`** Later).
+
 [AMENDED 2026-05-27]: **AI agents** — read repo root **`AGENTS.md`** before this file; use ARCHITECTURE for system design detail after onboarding.
 
 ## System Overview

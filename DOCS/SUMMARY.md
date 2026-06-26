@@ -1,5 +1,6 @@
 # SUMMARY
 Project: Builder-3D
+[AMENDED 2026-06-26]: **v1.3.0** — World placement & zone UX: soft yard warnings (amber ghost + HUD), 3D build boundary ring, smarter fence N / clone C, wedge/stairs/beam height snap fixes; see **`CHANGELOG`** `[1.3.0]` and **`ARCHITECTURE.md`** (2026-06-26 amendment).
 [AMENDED 2026-06-17]: **v1.2.0** — Shipped sidebar QoL + post-processing release sync: themes, Design layout, grid/sky controls, draft modal, takeoff groups; `APP_RELEASE` / `package.json` at **1.2.0**.
 [AMENDED 2026-06-17]: **v1.1.1** — Shipped post-processing release sync: `APP_RELEASE` / `package.json` / CHANGELOG aligned; update modal highlights AO + bloom + tone mapping.
 [AMENDED 2026-05-21]: **v1.1.0** — Post-processing pipeline (`main.js`): GTAOPass contact-shadow AO + UnrealBloomPass emissive/highlight glow + OutputPass ACESFilmic+sRGB via EffectComposer; HalfFloat MSAA render target; camera-synced ortho/persp; graceful GPU fallback.

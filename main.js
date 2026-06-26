@@ -14,6 +14,20 @@ const ITEM_TYPES = [
 ];
 const FENCE_ITEMS = ['fence_post', 'fence_rail', 'fence_panel'];
 const FENCE_POST = 'fence_post';
+/** Explicit heights for BufferGeometry / tool items (see getMeshHeightForItem). */
+const ITEM_HEIGHTS = {
+    wedge: 1.0,
+    stairs: 1.0,
+    spray: 0.1,
+    paintbrush: 0.36,
+    fence_post: 1.2,
+    fence_rail: 0.07,
+    fence_panel: 0.9
+};
+const GROUND_SNAP_ITEMS = ['column', 'pipe', 'pot', FENCE_POST];
+/** Stack-lock whitelist: pipe/column/pex/spray only — blocks do not auto-stack. */
+const STACK_LOCK_ITEMS = ['pipe', 'column', 'pex', 'spray'];
+const STORAGE_BUILD_ZONE_RING_KEY = 'builder3d-build-zone-ring';
 const WOOD_MATERIALS = ['wood', 'dark_wood', 'light_wood', 'mahogany'];
 const MATERIAL_KEYS = [
     'concrete', 'wood', 'brick', 'black_iron', 'sheetrock', 'terracotta', 'grass', 'asphalt', 'marble', 'cobblestone', 'shingles', 'glass', 'water', 'pex_red', 'pex_blue',
@@ -29,17 +43,14 @@ const BLUEPRINT_VERSION = 3;
 /** Shown in the update modal - bump with each user-facing release (see DOCS/RULES_RELEASES.md). */
 const STORAGE_SEEN_RELEASE_KEY = 'builder3d-seen-release';
 const APP_RELEASE = {
-    version: '1.2.0',
-    dateLabel: '2026-06-17',
+    version: '1.3.0',
+    dateLabel: '2026-06-26',
     highlights: [
-        'Post-processing pipeline: contact-shadow ambient occlusion, subtle bloom on bright materials, and ACES filmic tone mapping for richer depth and color.',
-        'Sidebar QoL: light/dark panel themes, Design card layout, per-section fold persistence, and staggered enter animation.',
-        'Site & grid controls: separate 1 m placement grid (G) and 5 m guide lines; optional procedural sky clouds under Lighting.',
-        'Takeoff panel: collapsible piece/material/level groups with Expand all / Collapse all.',
-        'Draft restore uses a non-blocking modal so the scene keeps animating behind the prompt.',
-        'WebGL Real-time Shadow Mapping & Sun Position Slider in the Lighting sidebar.',
-        'Paintbrush Tool & Eyedropper (press I or middle-click placed block to copy it).',
-        'Clone hovered parts with C for faster repeated architectural layouts.'
+        'Build zone vs yard: amber ghost + viewport chip when placing off the 20×20 pad (100×100 yard still buildable).',
+        'Optional 3D build-boundary ring on the pad edge — toggle in Site & grid.',
+        'Smarter fence chain (N): next post follows the row bearing; ground height re-sampled.',
+        'Clone (C): uses ghost position when visible; Alt hold steps ¼ m when using face offset.',
+        'Wedge/stairs height snap fixes; beam/slab ground-lock on flat hits.'
     ]
 };
 
@@ -151,6 +162,9 @@ class BuilderApp {
         this._backendAvailable = false;
         this.siteGround = { outer: 'grass', inner: 'concrete' };
         this._fenceCycleIdx = 0;
+        this.buildZoneRing = null;
+        this.buildZoneRingEnabled = true;
+        this._ghostPreviewTimer = null;
         this.sidebarCollapsed = false;
         this._sidebarResizeActive = false;
         this.init();
@@ -754,6 +768,89 @@ class BuilderApp {
         this._measureLine.frustumCulled = false;
         this._measureLine.visible = false;
         this.scene.add(this._measureLine);
+        this.setupBuildZoneRing();
+    }
+
+    setupBuildZoneRing() {
+        const half = this.getBuildZoneHalf();
+        const ringPts = [
+            new THREE.Vector3(-half, 0.012, -half),
+            new THREE.Vector3(half, 0.012, -half),
+            new THREE.Vector3(half, 0.012, half),
+            new THREE.Vector3(-half, 0.012, half)
+        ];
+        const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+        this.buildZoneRing = new THREE.LineLoop(
+            ringGeo,
+            new THREE.LineBasicMaterial({
+                color: 0x00f2ff,
+                transparent: true,
+                opacity: 0.55,
+                depthWrite: false
+            })
+        );
+        this.buildZoneRing.frustumCulled = false;
+        this.buildZoneRing.renderOrder = 3;
+        this.scene.add(this.buildZoneRing);
+        this.restoreBuildZoneRingPref();
+    }
+
+    getBuildZoneHalf() {
+        return this.gridSize / 2;
+    }
+
+    isInBuildZone(x, z) {
+        const h = this.getBuildZoneHalf();
+        return Math.abs(x) <= h && Math.abs(z) <= h;
+    }
+
+    isInYard(x, z) {
+        const buildH = this.getBuildZoneHalf();
+        const yardM = this.SITE_OUTER_HALF - 0.02;
+        const inYard = Math.abs(x) <= yardM && Math.abs(z) <= yardM;
+        return inYard && !this.isInBuildZone(x, z);
+    }
+
+    restoreBuildZoneRingPref() {
+        try {
+            const raw = localStorage.getItem(STORAGE_BUILD_ZONE_RING_KEY);
+            if (raw === '0') this.buildZoneRingEnabled = false;
+            else if (raw === '1') this.buildZoneRingEnabled = true;
+        } catch (e) {
+            /* storage disabled */
+        }
+        this.setBuildZoneRingVisible(this.buildZoneRingEnabled, true);
+    }
+
+    persistBuildZoneRingPref() {
+        try {
+            localStorage.setItem(STORAGE_BUILD_ZONE_RING_KEY, this.buildZoneRingEnabled ? '1' : '0');
+        } catch (e) {
+            /* storage disabled */
+        }
+    }
+
+    syncBuildZoneRingButton() {
+        const btn = document.getElementById('build-zone-ring-btn');
+        if (!btn) return;
+        btn.classList.toggle('active', this.buildZoneRingEnabled);
+    }
+
+    setBuildZoneRingVisible(on, silent = false) {
+        this.buildZoneRingEnabled = !!on;
+        if (this.buildZoneRing) this.buildZoneRing.visible = this.buildZoneRingEnabled;
+        this.syncBuildZoneRingButton();
+        this.persistBuildZoneRingPref();
+        if (!silent) {
+            this.showToast(
+                this.buildZoneRingEnabled ? 'Build boundary ring on' : 'Build boundary ring off',
+                'info'
+            );
+        }
+    }
+
+    toggleBuildZoneRing() {
+        this.setBuildZoneRingVisible(!this.buildZoneRingEnabled);
     }
 
     syncPlacementGridButton() {
@@ -969,6 +1066,7 @@ class BuilderApp {
         this.applyFpVertical(dt);
         this.applyFpSurfaceSnap();
         this.clampFpToSitePad();
+        this.updateZoneHud(this.fp.x, this.fp.z, 'walk');
         this.syncFirstPersonCamera();
     }
 
@@ -1409,11 +1507,76 @@ class BuilderApp {
         }
     }
 
-    updateSiteReadout(x, y, z) {
+    updateSiteReadout(x, y, z, opts = {}) {
         const el = document.getElementById('site-readout');
         if (!el) return;
-        const snapHint = this.currentItem === 'pex' ? ' · PEX surface snap' : this._fineSnap ? ' · Alt: ¼ m' : ' · 1 m grid';
-        el.textContent = `X ${x.toFixed(2)}  Y ${y.toFixed(2)}  Z ${z.toFixed(2)}${snapHint}`;
+        const { blocked = false } = opts;
+        const snapHint = this.currentItem === 'pex'
+            ? ' · PEX surface snap'
+            : this._fineSnap
+                ? ' · Alt: ¼ m'
+                : ' · 1 m grid';
+        const zoneHint = this.isInBuildZone(x, z) ? ' · build zone' : ' · yard (off 20×20 pad)';
+        const blockedHint = blocked ? ' · blocked' : '';
+        el.textContent = `X ${x.toFixed(2)}  Y ${y.toFixed(2)}  Z ${z.toFixed(2)}${snapHint}${zoneHint}${blockedHint}`;
+        el.classList.toggle('site-readout--yard', !this.isInBuildZone(x, z));
+        this.updateZoneHud(x, z, 'build');
+    }
+
+    updateZoneHud(x, z, mode = 'build') {
+        const el = document.getElementById('zone-hud');
+        if (!el) return;
+        const inBuild = this.isInBuildZone(x, z);
+        el.textContent = inBuild ? 'Build zone' : 'Yard';
+        el.classList.toggle('zone-hud--yard', !inBuild);
+        el.classList.toggle('zone-hud--walk', mode === 'walk');
+    }
+
+    applyGhostVisualState(blocked, x, z) {
+        const gmat = this.ghostObject?.material;
+        if (!gmat?.color) return;
+        let hex = 0x00f2ff;
+        if (blocked) hex = 0xff3355;
+        else if (!this.isInBuildZone(x, z)) hex = 0xffaa44;
+        gmat.color.setHex(hex);
+    }
+
+    getSnapHintSuffix() {
+        if (this.currentItem === 'pex') return ' · PEX surface snap';
+        if (this._fineSnap) return ' · Alt: ¼ m';
+        return ' · 1 m grid';
+    }
+
+    snapGhostYToSurface(x, z, item, intersect, pos, h) {
+        if (GROUND_SNAP_ITEMS.includes(item)) {
+            return this.getGroundYAt(x, z) + h / 2 + 0.02;
+        }
+        if (item === 'beam' || item === 'slab') {
+            const n = intersect?.face?.normal;
+            if (n && Math.abs(n.y) > 0.7) {
+                const gy = this.getGroundYAt(x, z);
+                return gy + h / 2 + 0.02;
+            }
+            const g = this._fineSnap ? 40 : 10;
+            return this._fineSnap ? Math.round(pos.y * g) / g : Math.round(pos.y * 10) / 10;
+        }
+        const g = this._fineSnap ? 4 : 1;
+        const quantized = this._fineSnap ? Math.round(pos.y * g) / g : Math.round(pos.y);
+        return Math.max(h / 2, quantized);
+    }
+
+    flashGhostPreview(position, rotation) {
+        if (!this.ghostObject || this.fpMode) return;
+        clearTimeout(this._ghostPreviewTimer);
+        this.ghostObject.position.copy(position);
+        if (rotation) this.ghostObject.rotation.copy(rotation);
+        this.ghostObject.visible = true;
+        const gmat = this.ghostObject.material;
+        if (gmat?.color) gmat.color.setHex(0xffffff);
+        this._ghostPreviewTimer = setTimeout(() => {
+            this._ghostPreviewTimer = null;
+            this.updateGhost();
+        }, 300);
     }
 
     updateMeasureReadout(text) {
@@ -1732,13 +1895,16 @@ class BuilderApp {
     }
 
     getMeshHeightForItem(item, geometry) {
-        if (geometry.type === 'BoxGeometry') {
+        if (item && ITEM_HEIGHTS[item] !== undefined) {
+            return ITEM_HEIGHTS[item];
+        }
+        if (geometry?.type === 'BoxGeometry') {
             return geometry.parameters.height;
         }
-        if (geometry.type === 'CylinderGeometry') {
+        if (geometry?.type === 'CylinderGeometry') {
             return geometry.parameters.height;
         }
-        if (geometry.type === 'TorusGeometry') {
+        if (geometry?.type === 'TorusGeometry') {
             return (geometry.parameters.radius + geometry.parameters.tube) * 2;
         }
         return 1;
@@ -1763,6 +1929,12 @@ class BuilderApp {
         const gy = this.getGroundYAt(this.ghostObject.position.x, this.ghostObject.position.z);
         this.ghostObject.position.y = gy + h / 2 + 0.02;
         return true;
+    }
+
+    finalizeGhostPlacement(blocked) {
+        const p = this.ghostObject.position;
+        this.updateSiteReadout(p.x, p.y, p.z, { blocked });
+        this.applyGhostVisualState(blocked, p.x, p.z);
     }
 
     updateGhost() {
@@ -1798,32 +1970,23 @@ class BuilderApp {
             const pos = intersect.point
                 .clone()
                 .add(intersect.face.normal.clone().multiplyScalar(0.5));
-            const isHitStackable = intersect.object && intersect.object.userData && ['pipe', 'column', 'pex', 'spray'].includes(intersect.object.userData.item);
-            const isCurrentStackable = ['pipe', 'column', 'pex', 'spray'].includes(this.currentItem);
+            const hitItem = intersect.object?.userData?.item;
+            const isHitStackable = hitItem && STACK_LOCK_ITEMS.includes(hitItem);
+            const isCurrentStackable = STACK_LOCK_ITEMS.includes(this.currentItem);
 
             if (this.trySnapFenceGhost(intersect)) {
                 this.ghostObject.visible = true;
-                this.updateSiteReadout(
-                    this.ghostObject.position.x,
-                    this.ghostObject.position.y,
-                    this.ghostObject.position.z
-                );
                 const blocked = this.ghostOverlapsPlaced(this.ghostObject);
-                const gmat = this.ghostObject.material;
-                if (gmat && gmat.color) gmat.color.setHex(blocked ? 0xff3355 : 0x00f2ff);
+                this.finalizeGhostPlacement(blocked);
                 return;
             }
 
             if (isCurrentStackable && isHitStackable && intersect.face.normal.y > -0.5) {
-                // Snap Lock: Snap to the top of the hit object
                 const hit = intersect.object;
                 this.ghostObject.position.x = hit.position.x;
                 this.ghostObject.position.z = hit.position.z;
                 const hitH = this.getMeshHeightForItem(hit.userData.item, hit.geometry);
-                const geom = this.ghostObject.geometry;
-                const h = this.getMeshHeightForItem(this.currentItem, geom);
-                
-                // If we hit the top, go up. If we hit the side, try to snap to top anyway for "lock" feel
+                const h = this.getMeshHeightForItem(this.currentItem, this.ghostObject.geometry);
                 const topY = hit.position.y + hitH / 2;
                 this.ghostObject.position.y = topY + h / 2;
             } else if (this.currentItem === 'pex') {
@@ -1836,50 +1999,33 @@ class BuilderApp {
                 const g = this._fineSnap ? 4 : 1;
                 this.ghostObject.position.x = Math.round(pos.x * g) / g;
                 this.ghostObject.position.z = Math.round(pos.z * g) / g;
-                const geom = this.ghostObject.geometry;
-                const h = this.getMeshHeightForItem(this.currentItem, geom);
-                this.ghostObject.position.y = Math.max(h / 2, pos.y);
-                if (['column', 'pipe', 'pot', FENCE_POST].includes(this.currentItem)) {
-                    const gy = this.getGroundYAt(this.ghostObject.position.x, this.ghostObject.position.z);
-                    this.ghostObject.position.y = gy + h / 2 + 0.02;
-                } else if (this.currentItem === 'beam' || this.currentItem === 'slab') {
-                    const gy = this._fineSnap ? Math.round(pos.y * 40) / 40 : Math.round(pos.y * 10) / 10;
-                    this.ghostObject.position.y = gy;
-                } else {
-                    this.ghostObject.position.y = this._fineSnap
-                        ? Math.round(pos.y * g) / g
-                        : Math.round(pos.y);
-                }
+                const h = this.getMeshHeightForItem(this.currentItem, this.ghostObject.geometry);
+                this.ghostObject.position.y = this.snapGhostYToSurface(
+                    this.ghostObject.position.x,
+                    this.ghostObject.position.z,
+                    this.currentItem,
+                    intersect,
+                    pos,
+                    h
+                );
             }
             if (this.currentItem === 'spray') {
-                // Pin spray to surface exactly
                 this.ghostObject.position.copy(intersect.point).add(intersect.face.normal.clone().multiplyScalar(0.01));
-                // Align to normal
                 const lookTarget = intersect.point.clone().add(intersect.face.normal);
                 this.ghostObject.lookAt(lookTarget);
             }
             this.ghostObject.visible = true;
-            this.updateSiteReadout(
-                this.ghostObject.position.x,
-                this.ghostObject.position.y,
-                this.ghostObject.position.z
-            );
             const blocked = this.ghostOverlapsPlaced(this.ghostObject);
-            const gmat = this.ghostObject.material;
-            if (gmat && gmat.color) {
-                gmat.color.setHex(blocked ? 0xff3355 : 0x00f2ff);
-            }
+            this.finalizeGhostPlacement(blocked);
         } else {
             this.ghostObject.visible = false;
             const sr = document.getElementById('site-readout');
             if (sr) {
-                const snapHint = this.currentItem === 'pex' ? ' · PEX surface snap' : this._fineSnap ? ' · Alt: ¼ m' : ' · 1 m grid';
-                sr.textContent = `Cursor —${snapHint}`;
+                sr.textContent = `Cursor —${this.getSnapHintSuffix()}`;
+                sr.classList.remove('site-readout--yard');
             }
             const gmat = this.ghostObject.material;
-            if (gmat && gmat.color) {
-                gmat.color.setHex(0x00f2ff);
-            }
+            if (gmat?.color) gmat.color.setHex(0x00f2ff);
         }
     }
 
@@ -2168,20 +2314,39 @@ class BuilderApp {
         const hit = hits[0];
         const source = hit.object;
         const snap = this.meshToSnapshot(source);
-        const normal = hit.face.normal.clone().transformDirection(source.matrixWorld);
-        const axis = Math.abs(normal.x) > Math.abs(normal.y) && Math.abs(normal.x) > Math.abs(normal.z)
-            ? 'x'
-            : Math.abs(normal.y) > Math.abs(normal.z)
-                ? 'y'
-                : 'z';
-        const offset = new THREE.Vector3();
-        offset[axis] = normal[axis] >= 0 ? 1 : -1;
-        snap.id = this._nextId++;
-        snap.position = [
-            snap.position[0] + offset.x,
-            Math.max(0.05, snap.position[1] + offset.y),
-            snap.position[2] + offset.z
-        ];
+        let usedGhost = false;
+
+        if (this.ghostObject?.visible) {
+            snap.id = this._nextId++;
+            snap.position = [
+                this.ghostObject.position.x,
+                this.ghostObject.position.y,
+                this.ghostObject.position.z
+            ];
+            snap.rotation = [
+                this.ghostObject.rotation.x,
+                this.ghostObject.rotation.y,
+                this.ghostObject.rotation.z
+            ];
+            usedGhost = true;
+        } else {
+            const normal = hit.face.normal.clone().transformDirection(source.matrixWorld);
+            const axis = Math.abs(normal.x) > Math.abs(normal.y) && Math.abs(normal.x) > Math.abs(normal.z)
+                ? 'x'
+                : Math.abs(normal.y) > Math.abs(normal.z)
+                    ? 'y'
+                    : 'z';
+            const step = this._fineSnap ? 0.25 : 1;
+            const offset = new THREE.Vector3();
+            offset[axis] = (normal[axis] >= 0 ? 1 : -1) * step;
+            snap.id = this._nextId++;
+            snap.position = [
+                snap.position[0] + offset.x,
+                Math.max(0.05, snap.position[1] + offset.y),
+                snap.position[2] + offset.z
+            ];
+        }
+
         const mesh = this.createMeshFromSnapshot(snap);
         if (this.meshIntersectsPlaced(mesh)) {
             this._nextId -= 1;
@@ -2190,8 +2355,10 @@ class BuilderApp {
             this.showToast('Clone blocked — target space is occupied.', 'danger');
             return;
         }
+        this.flashGhostPreview(mesh.position, mesh.rotation);
         this.commitPlacedMesh(mesh);
-        this.showToast(`Cloned ${snap.item}.`, 'info');
+        const stepNote = usedGhost ? 'at ghost' : this._fineSnap ? '¼ m step' : '1 m step';
+        this.showToast(`Cloned ${snap.item} (${stepNote}).`, 'info');
     }
 
     clearSceneConfirmed() {
@@ -2829,10 +2996,35 @@ class BuilderApp {
         const last = posts[posts.length - 1];
         const snap = this.meshToSnapshot(last);
         snap.id = this._nextId++;
-        snap.position = [last.position.x + 2, last.position.y, last.position.z];
+
+        let dx = 2;
+        let dz = 0;
+        if (posts.length >= 2) {
+            const prev = posts[posts.length - 2];
+            const bx = last.position.x - prev.position.x;
+            const bz = last.position.z - prev.position.z;
+            const len = Math.hypot(bx, bz);
+            if (len > 0.01) {
+                dx = (bx / len) * 2;
+                dz = (bz / len) * 2;
+            }
+        }
+
+        const h = this.getMeshHeightForItem(FENCE_POST, this.getItemGeometry(FENCE_POST));
+        const nx = last.position.x + dx;
+        const nz = last.position.z + dz;
+        const gy = this.getGroundYAt(nx, nz);
+        snap.position = [nx, gy + h / 2 + 0.02, nz];
+
+        const previewPos = new THREE.Vector3(nx, gy + h / 2 + 0.02, nz);
+        const previewRot = new THREE.Euler(snap.rotation[0], snap.rotation[1], snap.rotation[2]);
+        this.flashGhostPreview(previewPos, previewRot);
+
         const mesh = this.createMeshFromSnapshot(snap);
         if (this.meshIntersectsPlaced(mesh)) {
             this._nextId -= 1;
+            mesh.geometry.dispose();
+            if (mesh.material && typeof mesh.material.dispose === 'function') mesh.material.dispose();
             this.showToast('Next fence post blocked.', 'danger');
             return;
         }
@@ -3008,6 +3200,14 @@ class BuilderApp {
                 e.stopPropagation();
                 this.toggleMajorGrid();
             });
+        }
+        const buildZoneRingBtn = document.getElementById('build-zone-ring-btn');
+        if (buildZoneRingBtn) {
+            buildZoneRingBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleBuildZoneRing();
+            });
+            this.syncBuildZoneRingButton();
         }
         const measureBtn = document.getElementById('measure-toggle');
         if (measureBtn) {

@@ -41,3 +41,4 @@
 - [ ] Touch / a11y (focus, reduced motion)
 - [ ] Instancing for many repeated parts
 - [ ] Import simple `.glb` assets (equipment, props)
+- [ ] [AMENDED 2026-06-26]: OBB or tighter collision for first-person vs rotated parts (AABB caveat in **`ARCHITECTURE.md`**)

@@ -355,6 +355,36 @@ body.sidebar-collapsed .sidebar-resizer {
     padding: 1.25rem;
     pointer-events: none;
     min-width: 0;
+    gap: 0.5rem;
+}
+
+.zone-hud {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-color);
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+    font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+    box-shadow: 0 0 12px rgba(0, 242, 255, 0.12);
+}
+
+.zone-hud--yard {
+    color: #ffaa44;
+    border-color: rgba(255, 170, 68, 0.45);
+    box-shadow: 0 0 12px rgba(255, 170, 68, 0.15);
+}
+
+.zone-hud--walk.zone-hud--yard {
+    color: #ffb86c;
+}
+
+.site-readout--yard {
+    color: #ffaa44;
+    border-color: rgba(255, 170, 68, 0.35);
 }
 
 /* Custom scrollbar */

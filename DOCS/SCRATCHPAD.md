@@ -2,6 +2,7 @@
 # SCRATCHPAD
 
 ## Active Tasks
+[AMENDED 2026-06-26]: **v1.3.0** — World placement & zone UX shipped: soft yard warnings, build boundary ring, fence N bearing, clone-at-ghost, ITEM_HEIGHTS/snapGhostYToSurface; APP_RELEASE/package.json/CHANGELOG/SUMMARY/ARCHITECTURE synced.
 [AMENDED 2026-06-17]: **v1.2.0** — Release sync + push: promoted sidebar `[Unreleased]` to **1.2.0**; `APP_RELEASE`/`package.json` bumped; pushed to `origin/main`.
 [AMENDED 2026-06-17]: **v1.1.1** — Release sync + push: bumped `APP_RELEASE`/`package.json`, formal CHANGELOG `[1.1.1]` section, update modal post-processing highlight; pushed to `origin/main`.
 [AMENDED 2026-05-21]: **v1.1.0** — Post-processing pipeline: `EffectComposer` (HalfFloat MSAA target, `samples:4`), `GTAOPass` (contact-shadow AO), `UnrealBloomPass` (strength 0.5 / radius 0.4 / threshold 0.82), `OutputPass` (ACESFilmic+sRGB). `setupComposer()` + `renderFrame()` in `main.js`; `onResize` propagates to composer; camera synced each frame for ortho/persp; fallback to direct render on GPU failure. CHANGELOG/SUMMARY/SBOM/SCRATCHPAD updated.
@@ -29,6 +30,7 @@
 - [ ] Mobile/Touch support <!-- id: 10 -->
 
 ## Last 5 Actions
+1. **v1.3.0**: zone HUD, amber yard ghost, build boundary ring, fence N bearing, clone-at-ghost, height snap fixes — docs + release sync.
 1. Docs: `CHANGELOG` [Unreleased], `SUMMARY`, `ARCHITECTURE`, this scratchpad — sidebar QoL batch documented.
 1. Sidebar **Design** toggle (`#design-toggle-btn`, `builder3d-panel-design`, `body.sidebar-design-pop`) — pop-open button sections with card drop-down styling.
 1. Agent doc chain: `AGENTS.md` first; rule files must read and sync root playbook.

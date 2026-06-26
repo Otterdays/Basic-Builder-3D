@@ -1,6 +1,20 @@
 <!-- PRESERVATION RULE: Never delete or replace content. Append or annotate only. -->
 # CHANGELOG
 
+[AMENDED 2026-06-26]: **v1.3.0** — World placement & zone UX: soft yard warnings, build boundary ring, fence/clone/height snap fixes.
+
+## [1.3.0] - 2026-06-26
+### Added
+- **Build zone vs yard UX**: amber ghost + **Yard** viewport chip when cursor is off the 20×20 m pad; site readout suffix; 100×100 m yard remains fully buildable.
+- **Build boundary ring**: cyan **`LineLoop`** at ±10 m pad edge; **Build boundary ring** toggle in Site & grid; persisted **`builder3d-build-zone-ring`** (default on).
+- **Zone HUD**: **`#zone-hud`** pill in viewport chrome (Build zone / Yard); updates in build and walk modes.
+### Changed
+- **Fence chain (`N`)**: next post follows bearing from the last two posts (+2 m along row); ground Y re-sampled via **`getGroundYAt`**.
+- **Clone (`C`)**: places at ghost position/rotation when ghost visible; fallback face step respects **Alt** ¼ m vs 1 m.
+- **Height snap**: **`ITEM_HEIGHTS`** for wedge/stairs/fence/spray/paintbrush; **`snapGhostYToSurface`** unifies ground lock; beam/slab ground-lock on flat hits.
+- **Stack lock**: explicit **`STACK_LOCK_ITEMS`** whitelist (pipe/column/pex/spray) — blocks do not auto-stack.
+- Help, controls hint, and **`DOCS/ARCHITECTURE.md`** document zone policy, paintbrush (parts only), and clone/fence behavior.
+
 [AMENDED 2026-06-17]: **v1.2.0** — Release sync: promoted sidebar `[Unreleased]` to shipped; `APP_RELEASE` / `package.json` bumped to **1.2.0**; update modal highlights post-processing + sidebar QoL.
 
 ## [1.2.0] - 2026-06-17

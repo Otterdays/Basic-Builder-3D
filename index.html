@@ -212,7 +212,8 @@
                                 <button type="button" id="placement-grid-btn" class="action-btn secondary" title="1 m placement grid on the 20×20 m build zone — snap and align parts. Shortcut: G">1 m grid (G)</button>
                                 <button type="button" id="major-grid-btn" class="action-btn secondary" title="Bold lines every 5 m across the build zone — pace walls and slabs. Off = fully hidden.">5 m guides</button>
                             </div>
-                            <p class="section-hint" style="margin-top:0.5rem;"><kbd>U</kbd> grassy yard · <kbd>H</kbd> paint both grounds with current material</p>
+                            <button type="button" id="build-zone-ring-btn" class="action-btn secondary active" style="margin-top:0.5rem;width:100%" title="Cyan square on the 20×20 m pad edge — yard builds outside this ring">Build boundary ring</button>
+                            <p class="section-hint" style="margin-top:0.5rem;"><kbd>U</kbd> grassy yard · <kbd>H</kbd> paint both grounds · off-pad = yard (still placeable)</p>
                         </div>
                     </section>
 
@@ -320,9 +321,11 @@
             <button type="button" id="sidebar-expand-tab" class="sidebar-expand-tab" hidden title="Show tools panel (B)" aria-label="Expand tools panel">› <span>Tools</span></button>
 
             <div id="viewport-chrome" class="viewport-chrome">
+            <div id="zone-hud" class="zone-hud" aria-live="polite">Build zone</div>
             <div id="controls-hint" class="controls-hint">
                 <p>1–9, <kbd>0</kbd> item · M material · <kbd>B</kbd> hide/show panel · G grid · R / Q rotate · <strong>Alt</strong> ¼ m snap</p>
-                <p><kbd>C</kbd> clone hovered part · Fence <kbd>N</kbd> chain post · <kbd>]</kbd> cycle · <kbd>U</kbd> grassy yard · <kbd>H</kbd> paint both grounds</p>
+                <p><kbd>C</kbd> clone at ghost · Fence <kbd>N</kbd> chain post · <kbd>]</kbd> cycle · <kbd>U</kbd> grassy yard · <kbd>H</kbd> paint both grounds</p>
+                <p>Off 20×20 pad = <strong>yard</strong> (amber ghost — still placeable) · cyan ring marks build boundary</p>
                 <p>Ctrl+Z / Ctrl+Y undo · redo · <strong>Shift+click</strong> or <strong>Del</strong> remove · <kbd>V</kbd> plan · <kbd>F</kbd> frame · <kbd>Home</kbd> reset · <kbd>`</kbd> FPS</p>
                 <p>Walk: <strong>WASD</strong> · <strong>Space</strong> jump · <strong>Esc</strong> exit · click view to lock mouse</p>
             </div>
@@ -369,9 +372,12 @@
                 <li>Panel edge — drag to resize · double-click resizer to reset width</li>
                 <li><kbd>U</kbd> — grassy yard (grass site + dusk lighting)</li>
                 <li><kbd>R</kbd> / <kbd>Q</kbd> — rotate ghost ±90° · <kbd>X</kbd> <kbd>Y</kbd> <kbd>Z</kbd> — rotation axis</li>
-                <li>Fence post / rail / panel — toolbar; <kbd>]</kbd> cycle · <kbd>N</kbd> next post (+2 m) · snaps to posts</li>
+                <li>Fence post / rail / panel — toolbar; <kbd>]</kbd> cycle · <kbd>N</kbd> next post along row (+2 m bearing) · side-click snap to posts</li>
+                <li><kbd>C</kbd> — clone hovered part at ghost when visible; else 1 m (or Alt ¼ m) face step</li>
+                <li>Build zone vs yard — 20×20 m pad (grid); 100×100 m yard. Off-pad = amber ghost + Yard chip; placement not blocked.</li>
+                <li>Paintbrush — paints placed parts only (not ground); eyedropper <kbd>I</kbd> or middle-click</li>
                 <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> — undo / redo</li>
-                <li><kbd>T</kbd> — measure (click A &amp; B) · <kbd>P</kbd> — repeat last at ghost · <kbd>C</kbd> — clone hovered part</li>
+                <li><kbd>T</kbd> — measure (click A &amp; B) · <kbd>P</kbd> — repeat last at ghost</li>
                 <li><kbd>V</kbd> — toggle plan (ortho) view · <kbd>L</kbd> — cycle lighting</li>
                 <li><kbd>V</kbd> — plan view (orthographic top) · <kbd>F</kbd> — frame all · <kbd>Home</kbd> — reset camera</li>
                 <li><kbd>Del</kbd> / <kbd>Backspace</kbd> — remove part under cursor (build mode)</li>
